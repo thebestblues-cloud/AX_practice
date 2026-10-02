@@ -7,3 +7,8 @@ for k,f in [('%%DOC1%%','doc1_교육모듈.md'),('%%DOC2%%','doc2_협의공문.m
     t=(R/f).read_text(); assert '</script' not in t; s=s.replace(k,t)
 s=s.replace('%%DATA%%',json.dumps(json.load(open(R/'data.json')),ensure_ascii=False))
 (R/'반품진단_핵심브리핑.html').write_text(s); print(len(s))
+
+# 다운로드용(브라우저 직접 열기): 문서 골격·charset 포함
+i=s.index('</style>')+len('</style>')
+sa='<!doctype html>\n<html lang="ko">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">\n'+s[:i]+'\n</head>\n<body>\n'+s[i:]+'\n</body>\n</html>\n'
+(R/'반품진단_핵심브리핑_다운로드용.html').write_text(sa); print('standalone',len(sa))
