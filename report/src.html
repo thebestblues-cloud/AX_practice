@@ -1,0 +1,499 @@
+<title>참고서 반품 진단 리포트</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+KR:wght@600;800&display=swap">
+<style>
+/* Layout: 장부(ledger) 느낌의 단일 칼럼 리포트 — 좌측 절 번호 레일 없이 헤딩·표·차트 순서, 탭으로 Part 1 / 문서1 / 문서2 / 검산 분리 */
+:root{
+  --bg:#f7f8fa; --surface:#ffffff; --ink:#14181f; --ink-2:#4a5260; --ink-3:#7a8291; --rule:#dfe3ea; --rule-2:#eef1f5;
+  --accent:#1f4fa3; --accent-soft:#e6edf8;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --s5:#e87ba4; --s6:#008300; --s7:#4a3aa7; --gray:#b9bfc9;
+  --crit:#c62f2f; --crit-soft:#fbeaea; --warn:#a86a00; --warn-soft:#fdf3e1; --good:#1d7a46;
+  --f-display:"Noto Serif KR","Nanum Myeongjo",Georgia,serif; --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12151b; --surface:#1a1e26; --ink:#eef1f6; --ink-2:#b8c0cc; --ink-3:#8a93a2; --rule:#2e3440; --rule-2:#232833;
+  --accent:#7fa8ec; --accent-soft:#1f2b40;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --gray:#555d6b;
+  --crit:#ef6b6b; --crit-soft:#3a1f22; --warn:#e0a640; --warn-soft:#352a17; --good:#4fc283; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151b; --surface:#1a1e26; --ink:#eef1f6; --ink-2:#b8c0cc; --ink-3:#8a93a2; --rule:#2e3440; --rule-2:#232833;
+  --accent:#7fa8ec; --accent-soft:#1f2b40;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --s5:#d55181; --s6:#008300; --s7:#9085e9; --gray:#555d6b;
+  --crit:#ef6b6b; --crit-soft:#3a1f22; --warn:#e0a640; --warn-soft:#352a17; --good:#4fc283; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.65;margin:0}
+.wrap{max-width:1040px;margin:0 auto;padding-inline:20px;padding-block:28px 80px}
+header.top{display:grid;gap:6px;padding-bottom:18px;border-bottom:2px solid var(--ink)}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--ink-3);text-transform:uppercase}
+h1{font-family:var(--f-display);font-weight:800;font-size:clamp(26px,4vw,36px);margin:0;line-height:1.25;text-wrap:balance}
+.meta{color:var(--ink-2);font-size:13px;display:flex;flex-wrap:wrap;gap:4px 18px}
+.badge-int{display:inline-block;border:1px solid var(--crit);color:var(--crit);font-size:12px;padding:1px 8px;border-radius:3px;font-weight:500}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);display:flex;gap:2px;overflow-x:auto;border-bottom:1px solid var(--rule);margin:0 -4px 0;padding:8px 4px 0}
+nav.tabs button{font:inherit;font-size:14px;background:none;border:0;border-bottom:3px solid transparent;color:var(--ink-2);padding:8px 12px;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:700}
+nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section.pane{padding-top:22px}
+h2{font-family:var(--f-display);font-weight:800;font-size:22px;margin:42px 0 10px;text-wrap:balance;display:flex;gap:10px;align-items:baseline}
+h2 .no{font-family:var(--f-mono);font-size:14px;color:var(--accent);font-weight:500}
+h3{font-size:16px;margin:26px 0 8px;font-weight:700}
+p,li{max-width:72ch}
+ul{padding-left:20px;margin:6px 0}
+li{margin:3px 0}
+.lead{border:1px solid var(--ink);background:var(--surface);padding:20px 22px;display:grid;gap:12px}
+.lead .headline{font-family:var(--f-display);font-size:clamp(18px,2.6vw,22px);font-weight:800;line-height:1.5;margin:0;max-width:none}
+.lead .headline em{font-style:normal;color:var(--crit)}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.tile{background:var(--surface);border:1px solid var(--rule);padding:12px 14px;display:grid;gap:2px;align-content:start}
+.tile .k{font-size:12px;color:var(--ink-3)}
+.tile .v{font-family:var(--f-mono);font-size:24px;font-weight:500;font-variant-numeric:tabular-nums}
+.tile .s{font-size:12px;color:var(--ink-2)}
+.tile.crit .v{color:var(--crit)}
+.tbl{overflow-x:auto;margin:10px 0 4px;border:1px solid var(--rule);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13.5px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 10px;border-bottom:1px solid var(--rule-2);text-align:right;white-space:nowrap}
+th{background:var(--rule-2);color:var(--ink-2);font-weight:500;font-size:12.5px}
+td:first-child,th:first-child{text-align:left}
+td.l,th.l{text-align:left;white-space:normal}
+tr.sum td{font-weight:700;border-top:2px solid var(--ink);background:var(--surface)}
+tr.hi td{background:var(--crit-soft)}
+.up{color:var(--good);font-weight:700}.dn{color:var(--crit);font-weight:700}
+.note{font-size:12.5px;color:var(--ink-3);margin:4px 0 0;max-width:none}
+.judge{border-left:3px solid var(--accent);padding:6px 12px;margin:10px 0 18px;background:var(--accent-soft);font-size:14px;max-width:none}
+.judge b{color:var(--accent)}
+.chart{background:var(--surface);border:1px solid var(--rule);padding:12px 12px 6px;margin:12px 0;position:relative}
+.chart .ct{font-size:13.5px;font-weight:700;margin:0 0 2px}
+.chart .cs{font-size:12px;color:var(--ink-3);margin:0 0 6px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--ink-2);margin:2px 0 6px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.legend i.ln{height:2px;width:14px;vertical-align:3px}
+svg text{font-family:var(--f-body)}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:12px}
+.grid2>*{min-width:0}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:4px;line-height:1.5;z-index:20;max-width:260px;white-space:pre-line}
+.lab{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:3px;margin-right:6px}
+.lab.a{background:var(--accent-soft);color:var(--accent)}
+.lab.b{background:var(--crit-soft);color:var(--crit)}
+.lab.c{background:var(--warn-soft);color:var(--warn)}
+.qs{display:grid;gap:6px;counter-reset:q}
+.qs div{background:var(--surface);border:1px solid var(--rule);padding:8px 12px;font-family:var(--f-mono);font-size:13.5px}
+/* markdown panes */
+.md{background:var(--surface);border:1px solid var(--rule);padding:24px clamp(16px,4vw,40px)}
+.md h1{font-size:24px;margin:8px 0 14px}
+.md h2{font-size:19px;margin:34px 0 10px;padding-top:12px;border-top:1px solid var(--rule)}
+.md h3{font-size:16px}
+.md h4{font-size:14.5px;margin:18px 0 6px}
+.md table{margin:10px 0;display:block;overflow-x:auto;border:1px solid var(--rule)}
+.md blockquote{margin:10px 0;padding:6px 14px;border-left:3px solid var(--accent);background:var(--accent-soft)}
+.md hr{border:0;border-top:1px solid var(--rule);margin:24px 0}
+.md code{font-family:var(--f-mono);font-size:13px;background:var(--rule-2);padding:1px 4px;border-radius:3px}
+.md pre{background:var(--rule-2);padding:10px 12px;overflow-x:auto}
+@media (max-width:560px){body{font-size:14.5px}.wrap{padding-inline:16px}th,td{padding:6px 7px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">영업관리 · 반품/정산 진단 브리핑</div>
+  <h1>참고서 반품 진단 리포트</h1>
+  <div class="meta"><span>기준일 2025-12-31(수) · 데이터 2024-01~2025-12, 24개월</span><span>거래처 12곳 · 출고 시리즈 59종 · 누적 출고 5,480,230부</span><span class="badge-int">사내 한정 — 거래처 배포 금지</span></div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button role="tab" id="t-p1" aria-selected="true" data-p="p1">Part 1 진단 브리핑</button>
+  <button role="tab" id="t-d1" aria-selected="false" data-p="d1">문서 1 · 교육 모듈</button>
+  <button role="tab" id="t-d2" aria-selected="false" data-p="d2">문서 2 · 협의 공문</button>
+  <button role="tab" id="t-ck" aria-selected="false" data-p="ck">검산·가정</button>
+</nav>
+
+<section class="pane" id="p1">
+
+<h2><span class="no">■</span>핵심</h2>
+<div class="lead">
+  <p class="headline">대표님, 지금 가장 급한 것은 <em>한솔북센의 구조적 고반품</em>입니다 — 타 11개사 수준을 넘는 초과 반품이 연 <em>15.5억원</em>의 매출을 지우고 있습니다.</p>
+  <ul>
+    <li>한솔북센 반품률 37.6% = 타 11개사 가중평균 10.4%의 3.6배. 출고 매출 1위 → 실판매 매출 3위로 2계단 하락</li>
+    <li>개정판 직전 3개월 구판 밀어내기(평상시 4.6~5.4배 출고)의 33.1%를 한솔북센이 수령 — 고반품과 밀어내기는 별개 문제가 아닌 하나의 구조</li>
+    <li>판단: 거래조건(반품률 상한·물류비 분담) 협의와 개정판 전 출고 상한 제도화를 동시 착수 필요. 2026-01 개정 실전만점 수학 고2는 이미 평상시 3.2배 출고 완료 → 2~4월 반품 대비 시급</li>
+  </ul>
+  <div class="tbl"><table>
+    <tr><th>핵심 수치</th><th>값</th><th class="l">연간 환산(가정)</th></tr>
+    <tr><td>전사 누적 반품률</td><td>15.46%</td><td class="l">반품액 연 48.3억원 (24개월 합 ÷ 2) · 최근 12개월 57.1억원</td></tr>
+    <tr class="hi"><td>한솔북센 초과 반품</td><td>276,000부</td><td class="l">매출 연 15.5억원 (자기 제외 평균 10.4% 기준, 24개월 ÷ 2)</td></tr>
+    <tr><td>개정판 직전 구간 반품률</td><td>36.9%</td><td class="l">전사 평균 2.39배 · 구판 폐기원가 연 5.9억원</td></tr>
+    <tr><td>현금 손실 합계</td><td>—</td><td class="l">연 16.1억원 (물류 5.9 + 폐기 8.3 + 공급률 1.9, 물류비 1,400원/부 가정)</td></tr>
+  </table></div>
+</div>
+
+<h2><span class="no">1</span>데이터 확인과 조인 정합</h2>
+<div class="tbl"><table>
+<tr><th>점검 항목</th><th class="l">결과</th></tr>
+<tr><td>파일 규모</td><td class="l">출고 1,166행 · 반품 641행 · 도서마스터 60행, 결측·중복 키 0건</td></tr>
+<tr><td>월 범위</td><td class="l">출고 2024-01~2025-12(24개월) · 반품 2024-03~2025-12(22개월)</td></tr>
+<tr><td>거래처·시리즈</td><td class="l">거래처 12곳(출고·반품 동일) · 출고 시리즈 59종 · 반품 시리즈 43종</td></tr>
+<tr><td>① 반품 (거래처, 시리즈) ⊂ 출고</td><td class="l">161개 조합 전부 출고 이력 존재 (출고 조합 249개)</td></tr>
+<tr><td>② 시리즈명 ⊂ 도서마스터</td><td class="l">출고 59종·반품 43종 전부 존재</td></tr>
+<tr><td>③ 출고 이력 없는 마스터 시리즈</td><td class="l">1종 — 한권끝 과학 초5 (24개월 출고 0부)</td></tr>
+<tr><td>④ 누적 반품 &gt; 누적 출고 조합</td><td class="l">0건</td></tr>
+<tr><td>⑤ 반품 시차</td><td class="l">첫 반품 2024-03 = 첫 출고 후 2개월 · 조합별 첫 출고→첫 반품 간격 최소 2 / 중앙값 4 / 평균 6.3개월</td></tr>
+</table></div>
+<p class="judge"><b>→ 판단:</b> 3파일 조인 키 정합 이상 없음. 반품 시차로 2024년 초 반품이 과소 관측되므로 연도 간 반품률(2024 12.6% vs 2025 18.5%) 단순 비교는 편향 — 판단 근거는 24개월 누적 기준만 사용</p>
+
+<div class="chart">
+  <p class="ct">월별 출고·반품 부수</p>
+  <p class="cs">월 평균 출고 22.8만부 · 2·8월 성수기 / 반품은 2024-03부터 관측</p>
+  <div class="legend"><span><i style="background:var(--s1)"></i>출고부수</span><span><i style="background:var(--s2)"></i>반품부수</span></div>
+  <div id="c-monthly"></div>
+</div>
+
+<h2><span class="no">2</span>출고 기준과 실판매 기준 — 전사</h2>
+<ul>
+<li><b>출고 기준 매출</b> = Σ(출고부수_부 × 공급단가_원부)</li>
+<li><b>실판매부수</b> = 출고부수_부 − 반품부수_부</li>
+<li><b>실판매 기준 매출</b> = 출고 기준 매출 − 반품액</li>
+<li><b>반품액</b> = Σ(반품부수_부 × (거래처×시리즈)별 출고 가중평균 공급단가) — 단일 기준</li>
+<li><b>반품률</b> = 24개월 누적 반품부수 ÷ 24개월 누적 출고부수</li>
+</ul>
+<div class="tbl"><table>
+<tr><th>지표</th><th>24개월 누적</th><th>연환산 ① 합계÷24×12</th><th>연환산 ② 최근 12개월(2025)</th></tr>
+<tr><td>출고부수</td><td>5,480,230</td><td>2,740,115</td><td>2,653,870</td></tr>
+<tr><td>반품부수</td><td>847,259</td><td>423,630</td><td>491,718</td></tr>
+<tr><td>실판매부수</td><td>4,632,971</td><td>2,316,486</td><td>—</td></tr>
+<tr><td>반품률(누적)</td><td>15.46%</td><td>—</td><td>—</td></tr>
+<tr><td>출고 기준 매출</td><td>643.29억</td><td>321.65억</td><td>314.46억</td></tr>
+<tr><td>반품액</td><td>96.54억</td><td><b>48.27억</b></td><td><b>57.06억</b></td></tr>
+<tr class="sum"><td>실판매 기준 매출</td><td>546.75억</td><td>273.38억</td><td>—</td></tr>
+</table></div>
+<p class="note">반품액 단가: (거래처×시리즈)별 출고 가중평균 공급단가. 최근 12개월 반품액 = 2025년 입고 반품 × 동일 단가. 최근 12개월 실판매부수·반품률은 반품 시차로 출고·반품 기간 불일치 → 미산출</p>
+<div class="tbl"><table>
+<tr><th>연도별(입고 기준)</th><th>2024</th><th>2025</th><th>증감</th></tr>
+<tr><td>출고 기준 매출</td><td>328.83억</td><td>314.46억</td><td>−4.4%</td></tr>
+<tr><td>그해 입고 반품액</td><td>39.48억</td><td>57.06억</td><td>+44.5%</td></tr>
+<tr><td>실판매 기준 매출</td><td>289.35억</td><td>257.40억</td><td>−11.0%</td></tr>
+<tr><td>반품 왕복 물류비(1,400원/부 가정)</td><td>4.98억</td><td>6.88억</td><td>+38.3%</td></tr>
+<tr><td>폐기 제작원가(개정판교체+파본)</td><td>6.07억</td><td>10.50억</td><td>+73.0%</td></tr>
+</table></div>
+<p class="note">2024년 반품은 시차로 과소 관측 → 증감률은 방향 확인용. 월별 반품률(당월 반품 ÷ 당월 출고)은 시차 때문에 100%를 넘을 수 있음: 시리즈×월 단위 반품 발생 295건 중 108건이 100% 초과(최고 개념단단 영어 중1 2025-04, 370.3%) — 오류 아닌 시차의 결과, 판단은 누적 기준</p>
+<p class="judge"><b>→ 판단:</b> 출고 기준으로 보던 매출의 15.0%(연 48.3억, 최근 12개월 기준 57.1억)가 실제로는 없는 매출. 두 연환산 차이 18% — 최근 12개월이 높게 나오는 원인은 반품 시차(2024년 초 반품 미관측) + 2025년 개정판 3종 반품 집중</p>
+
+<h2><span class="no">3</span>거래처 진단 — 출고 순위와 실판매 순위</h2>
+<div class="tbl"><table id="tb-partner"></table></div>
+<p class="note">행 순서: 출고 기준 매출 내림차순. 금액 단위 억원. 평균 공급률 = Σ출고액 ÷ Σ(출고부수 × 정가). 반품액 단가 기준은 절 2와 동일</p>
+<div class="grid2">
+  <div class="chart"><p class="ct">순위 이동: 출고 기준 → 실판매 기준</p><p class="cs">매출 순위 · 선 기울기 = 계단 이동</p>
+    <div class="legend"><span><i class="ln" style="background:var(--crit)"></i>하락</span><span><i class="ln" style="background:var(--s1)"></i>상승</span><span><i class="ln" style="background:var(--gray)"></i>변동 없음</span></div><div id="c-slope"></div></div>
+  <div class="chart"><p class="ct">거래처별 누적 반품률</p><p class="cs">기준선: 전사 15.5% · 한솔 제외 평균 10.4%</p><div id="c-rate"></div></div>
+</div>
+<p class="judge"><b>→ 판단:</b> 순위 어긋남 5곳 — 한솔북센 1→3(▼2), 남강교재총판 4→5(▼1), 대명서적유통 2→1(▲1), 북웨이브몰 3→2(▲1), 페이지온몰 5→4(▲1). 출고 1위가 실판매 기준으로는 1위가 아님</p>
+
+<h3>최고 반품률 거래처: 한솔북센</h3>
+<div class="tbl"><table>
+<tr><th>구분</th><th>반품률</th><th>한솔 배수</th></tr>
+<tr class="hi"><td>한솔북센</td><td>37.64%</td><td>—</td></tr>
+<tr><td>자기 제외 평균(타 11개사 가중)</td><td>10.42%</td><td>3.61배</td></tr>
+<tr><td>자기 포함 평균(전사 12개사)</td><td>15.46%</td><td>2.43배</td></tr>
+<tr><td class="l">참고: 타 11개사 반품률 단순평균</td><td>10.08%</td><td>3.73배</td></tr>
+</table></div>
+<ul>
+<li>초과 반품부수 = 381,708 − 1,014,080 × 10.42% = <b>276,000부</b> (24개월)</li>
+<li>초과 반품 매출 = 276,000 × 평균 공급단가 11,263원 = 31.1억원 → <b>연 15.5억원</b> (가정: 24개월 합계 ÷ 2, 자기 제외 가중평균 반품률을 정상 수준으로 간주)</li>
+<li>사유 구성: 기간만료 174,421 · 재고조정 91,939 · 개정판교체 89,371 · 파본 23,216 · 오배송 2,761부</li>
+<li>개정판 직전 구간 출고·반품 제외 시에도 반품률 31.0% — 밀어내기만으로 설명 불가</li>
+<li>최근 12개월(2025): 출고 485,930 · 반품 218,425부 → 44.9%(반품 시차로 과대 가능, 참고치)</li>
+<li>파본 비중 6.1%(23,216 ÷ 381,708) · 반기 공급률 64.48% → 64.48% → 64.50% → 64.43%(변동 없음)</li>
+<li>출고 1부당 공헌 = (1−r)(p−c) − r(L + d·c) · p 평균 공급단가 11,263원 · c 평균 제작원가 5,877원 · L 1,400원 · d 재판매 불가(개정판교체+파본) 비중 29.5%(112,587부) → 현재 37.6%: 2,179원 · 30%: 2,830원 · 25%: 3,256원 · 자기 제외 평균 10.4%: 4,498원</li>
+<li>손익분기 반품률 r* = (p−c) ÷ (p−c+L+d·c) = 63.2%(전사 값 p 11,738 · c 5,882 · d 33.1% 기준 63.6%) — 인세·창고·금융비용 미반영</li>
+</ul>
+<div class="chart"><p class="ct">한솔북센 월별 반품률: 당월 vs 누적</p><p class="cs">당월 반품률 = 당월 반품 ÷ 당월 출고 · 누적 = 기간 누적 반품 ÷ 기간 누적 출고</p>
+  <div class="legend"><span><i class="ln" style="background:var(--s2)"></i>당월 반품률</span><span><i class="ln" style="background:var(--s1)"></i>누적 반품률</span><span><i class="ln" style="background:var(--gray)"></i>타 11개사 당월 반품률</span></div>
+  <div id="c-hs"></div></div>
+<details open><summary class="note" style="cursor:pointer">한솔북센 월별 출고·반품·반품률 표 (24개월)</summary>
+<div class="tbl"><table id="tb-hs"></table></div></details>
+<p class="judge"><b>→ 판단:</b> 당월 반품률은 9.5~90.8%로 요동(출고가 많은 2·3·8월 저점, 개정판 직후 고점) — 반품이 과거 출고분에서 오기 때문. 누적 반품률은 2025-04 이후 33~38%에서 고정 = 일시 현상 아닌 구조. 반품 관측 시작(2024-03) 이후 22개월 연속 타 11개사 합산 당월 반품률 상회(월별 검산 완료)</p>
+
+<h2><span class="no">4</span>개정판 출간 전후 구판 흐름 — 3파일 조인</h2>
+<p class="note" style="font-size:13.5px;color:var(--ink-2)">대상: 개정판출간월이 2024-01~2025-12 안인 6종. 제외 3종 — 한권끝 국어 초5(2023-09, 기간 이전), 실전만점 수학 고2(2026-01, 기간 이후), 첫걸음 영어 초5(2026-03, 기간 이후)</p>
+<div class="tbl"><table>
+<tr><th>시리즈</th><th>개정월 M</th><th>M-3</th><th>M-2</th><th>M-1</th><th>3개월 합</th><th>평상시 배수 ⓐ</th><th>평상시 배수 ⓑ</th><th>M+1~M+3 반품</th><th>구간 반품률</th></tr>
+<tr><td>개념단단 수학 중2</td><td>2024-05</td><td>51,180</td><td>63,230</td><td>43,430</td><td>157,840</td><td>6.18</td><td>5.00</td><td>53,473</td><td>33.9%</td></tr>
+<tr><td>한권끝 수학 초6</td><td>2024-09</td><td>25,300</td><td>41,340</td><td>64,390</td><td>131,030</td><td>5.25</td><td>4.75</td><td>53,884</td><td>41.1%</td></tr>
+<tr><td>완성노트 수학 중3</td><td>2024-12</td><td>42,230</td><td>34,810</td><td>59,000</td><td>136,040</td><td>5.20</td><td>4.21</td><td>46,251</td><td>34.0%</td></tr>
+<tr><td>개념단단 영어 중1</td><td>2025-03</td><td>51,610</td><td>51,930</td><td>69,200</td><td>172,740</td><td>7.58</td><td>6.14</td><td>69,427</td><td>40.2%</td></tr>
+<tr><td>기출정복 영어 고1</td><td>2025-07</td><td>24,780</td><td>24,620</td><td>35,890</td><td>85,290</td><td>3.28</td><td>3.12</td><td>30,045</td><td>35.2%</td></tr>
+<tr><td>개념단단 국어 중3</td><td>2025-09</td><td>29,710</td><td>51,630</td><td>63,450</td><td>144,790</td><td>5.43</td><td>4.39</td><td>52,390</td><td>36.2%</td></tr>
+<tr class="sum"><td>합계(6종)</td><td></td><td>224,810</td><td>267,560</td><td>335,360</td><td>827,730</td><td>5.44</td><td>4.60</td><td>305,470</td><td>36.9%</td></tr>
+</table></div>
+<p class="note">평상시 배수 = (3개월 합 ÷ 3) ÷ 평상시 월평균. ⓐ 창 밖 21개월 전체 평균(무출고 월 포함) ⓑ 창 밖 출고 발생 월만의 평균. M-6~M-4 기준은 개념단단 수학 중2의 해당 구간이 데이터 이전(1개월만 관측)이라 미채택. 합계 행 배수 = 6종 합산 기준</p>
+<p class="judge"><b>→ 판단:</b> 개정판 직전 3개월 구판 출고가 평상시의 4.6~5.4배. 구간 반품률 36.9% = 전사 평균 15.46%의 2.39배. 6종 전부 3.1배 이상 — 특정 시리즈 아닌 관행</p>
+
+<div class="chart"><p class="ct">개정월(M) 기준 정렬한 월 출고 배수</p><p class="cs">월 출고 ÷ 평상시 월평균 ⓑ · 1.0 = 평상시 · M월 출고 급감 후 M+1 이후 정상화</p>
+  <div class="legend" id="lg-ev"></div><div id="c-ev"></div></div>
+
+<h3>M-3~M-1 구판 출고 거래처별 분해</h3>
+<div class="grid2">
+<div class="tbl" style="margin:0"><table>
+<tr><th>거래처</th><th>구간 출고</th><th>비중</th><th>평상시 비중</th></tr>
+<tr class="hi"><td>한솔북센</td><td>274,190</td><td>33.1%</td><td>20.1%</td></tr>
+<tr><td>대명서적유통</td><td>200,260</td><td>24.2%</td><td>18.2%</td></tr>
+<tr><td>북웨이브몰</td><td>141,950</td><td>17.1%</td><td>16.0%</td></tr>
+<tr><td>남강교재총판</td><td>128,930</td><td>15.6%</td><td>13.1%</td></tr>
+<tr><td>페이지온몰</td><td>31,410</td><td>3.8%</td><td>9.3%</td></tr>
+<tr><td>세림북유통</td><td>30,890</td><td>3.7%</td><td>7.6%</td></tr>
+<tr><td>기타</td><td>20,100</td><td>2.4%</td><td>15.7%</td></tr>
+<tr class="sum"><td>합계</td><td>827,730</td><td>100.0%</td><td>100.0%</td></tr>
+</table></div>
+<div class="chart" style="margin:0"><p class="ct">구간 출고 비중 vs 평상시 비중</p><p class="cs">평상시 = 같은 6종의 창 밖 출고 비중</p>
+<div class="legend"><span><i style="background:var(--s1)"></i>M-3~M-1 비중</span><span><i style="background:var(--gray)"></i>평상시 비중</span></div><div id="c-share"></div></div>
+</div>
+<p class="note">기타 구간 출고: 책마루서점 9,950 · 하루책방닷컴 5,470 · 청람서점 4,680(글벗문고·한빛서림·다온북스 0부). 기타 평상시 비중은 이 6곳 합계</p>
+<p class="judge"><b>→ 판단:</b> 구판 물량 최다 수령처 = 한솔북센(33.1%, 평상시 대비 +13.0%p) = 절차 3의 고반품 거래처와 동일. 개정판 후 3개월 반품 305,470부 중 한솔북센 152,619부(50.0%). 하나의 구조</p>
+
+<h3>구간 반품사유와 폐기 제작원가</h3>
+<div class="tbl"><table>
+<tr><th>반품사유(M+1~M+3)</th><th>부수</th><th>비중</th><th class="l">처리</th></tr>
+<tr><td>개정판교체</td><td>207,645</td><td>68.0%</td><td class="l">구판 교체 — 재판매 불가, 폐기</td></tr>
+<tr><td>기간만료반품</td><td>73,059</td><td>23.9%</td><td class="l">재판매 가능 분류(구판 여부 확인 필요)</td></tr>
+<tr><td>재고조정</td><td>24,004</td><td>7.9%</td><td class="l">재판매 가능 분류</td></tr>
+<tr><td>오배송</td><td>762</td><td>0.2%</td><td class="l">재판매 가능 분류</td></tr>
+<tr class="sum"><td>합계</td><td>305,470</td><td>100.0%</td><td></td></tr>
+</table></div>
+<div class="tbl"><table>
+<tr><th>시리즈</th><th>개정판교체 부수</th><th>제작원가_원부</th><th>폐기 제작원가</th><th>왕복 물류비(1,400원)</th><th>이중 손실 합계</th></tr>
+<tr><td>개념단단 수학 중2</td><td>38,474</td><td>5,670</td><td>218,147,580</td><td>53,863,600</td><td>272,011,180</td></tr>
+<tr><td>한권끝 수학 초6</td><td>34,260</td><td>4,170</td><td>142,864,200</td><td>47,964,000</td><td>190,828,200</td></tr>
+<tr><td>완성노트 수학 중3</td><td>34,057</td><td>6,360</td><td>216,602,520</td><td>47,679,800</td><td>264,282,320</td></tr>
+<tr><td>개념단단 영어 중1</td><td>43,307</td><td>5,480</td><td>237,322,360</td><td>60,629,800</td><td>297,952,160</td></tr>
+<tr><td>기출정복 영어 고1</td><td>22,245</td><td>6,980</td><td>155,270,100</td><td>31,143,000</td><td>186,413,100</td></tr>
+<tr><td>개념단단 국어 중3</td><td>35,302</td><td>6,110</td><td>215,695,220</td><td>49,422,800</td><td>265,118,020</td></tr>
+<tr class="sum"><td>합계</td><td>207,645</td><td></td><td>1,185,901,980</td><td>290,703,000</td><td>1,476,604,980</td></tr>
+</table></div>
+<p class="note">단위 원. 이중 손실 = 개정판교체 부수 × (1,400원 + 제작원가_원부). 24개월 합계 14.8억 → 연 7.4억(24개월 ÷ 2)</p>
+<ul>
+<li>폐기 제작원가 = Σ(개정판교체 부수 × 시리즈 제작원가_원부) = <b>11.86억원</b>(24개월) → 연 5.9억원(24개월 ÷ 2) · 최근 12개월 8.2억원</li>
+<li>전제: 구판은 개정판 출간 후 재판매 불가. 개정판교체 반품 전량이 M+1~M+3에 입고(6종 모두 확인)</li>
+<li>보수적 산정: 같은 구간 기간만료·재고조정 97,825부도 구판일 가능성 → 포함 시 폐기원가 증가(확인 필요)</li>
+</ul>
+
+<h3>예정 개정판 — 구간이 이미 데이터 안에 들어온 시리즈</h3>
+<div class="tbl"><table>
+<tr><th>시리즈</th><th>개정월</th><th>관측 구간</th><th>구간 출고</th><th>평상시 배수 ⓐ/ⓑ</th><th>예상 반품(추정)</th><th>예상 폐기원가(추정)</th><th>예상 물류비(추정)</th></tr>
+<tr class="hi"><td>실전만점 수학 고2</td><td>2026-01</td><td>M-3~M-1 전체</td><td>103,350</td><td>3.16 / 2.86</td><td>38,100부</td><td>1.7억원</td><td>0.5억원</td></tr>
+<tr><td>첫걸음 영어 초5</td><td>2026-03</td><td>M-3만(2025-12)</td><td>8,040</td><td>1.45 / 1.20</td><td>—</td><td>—</td><td>—</td></tr>
+</table></div>
+<p class="note">(추정, 가정: 구간 반품률 36.9%·개정판교체 비중 68.0%를 실측 6종에서 그대로 적용, 제작원가 6,730원/부, 물류비 1,400원/부). 반품은 아직 미관측(2026-02~04 입고 예상). 실전만점 수학 고2 구간 출고 수령처: 대명서적유통 28,350 · 한솔북센 27,370 · 북웨이브몰 17,990 · 남강교재총판 15,360 외. 실전만점 수학 고2 기초값: 24개월 출고 332,080부(출고 발생 22개월, 월평균 15,095부) · 평균 공급단가 12,863원 · 평상시 월평균 ⓐ 10,892부 / ⓑ 12,038부</p>
+<p class="note">M-2 추가 출고 1회분(월평균 15,095부) 기대 손익(구간 반품률 36.9%·폐기 비중 68.0%) = 9,525부 × (12,863−6,730) − 5,570부 × 1,400 − 3,788부 × 6,730 = 2,513만원 · 평상시 조건(15.46%·33.1%) 6,979만원 → 64% 감소</p>
+<p class="judge"><b>→ 판단:</b> 실전만점 수학 고2 반품 약 3.8만부·현금 손실 약 2.3억원이 2026년 2~4월 도래 예상. 첫걸음 영어 초5는 M-2(2026-01)·M-1(2026-02)이 아직 미래 — 지금 출고 상한 적용 시 손실 회피 가능</p>
+
+<h2><span class="no">5</span>공급률 진단 — 조용히 깎이는 마진</h2>
+<p class="note" style="font-size:13.5px;color:var(--ink-2)">공급률 = Σ(출고부수 × 공급단가) ÷ Σ(출고부수 × 정가), 출고부수 가중. 정가는 도서마스터 조인</p>
+<div class="tbl"><table id="tb-sr"></table></div>
+<p class="note">ⓑ 첫 달(2024-01)·마지막 달(2025-12) 공급률 차 ÷ 23개월 × 12. 최근 1년 정가 출고액 = 2025년 Σ(출고부수 × 정가). 하락 판정 기준: 연도 평균 차 −1.0%p 이하</p>
+<div class="chart"><p class="ct">거래처별 월 공급률 추이</p><p class="cs">하락 3곳 강조 · 나머지 9곳 회색(±0.1%p 이내 정체)</p>
+<div class="legend"><span><i class="ln" style="background:var(--s1)"></i>북웨이브몰</span><span><i class="ln" style="background:var(--s2)"></i>페이지온몰</span><span><i class="ln" style="background:var(--s3)"></i>하루책방닷컴</span><span><i class="ln" style="background:var(--gray)"></i>기타 9곳</span></div><div id="c-sr"></div></div>
+<p class="judge"><b>→ 판단:</b> 온라인몰 3곳(명칭 기준 분류) 공급률이 반기마다 0.6~0.8%p씩 하락, 2년간 약 2.3%p 하락. 연간 침식액 ⓐ 1.91억원 / ⓑ 1.93억원 — 본문 수치는 ⓐ(연도 평균 차, 월 변동에 덜 민감). 나머지 9곳 변동 없음(±0.1%p 이내). 하락 원인(계약 개정·프로모션 분담·협상)은 데이터에 없음 — 확인 필요</p>
+
+<h2><span class="no">6</span>반품사유 진단 — 공정 신호 역추적</h2>
+<div class="grid2">
+<div class="tbl" style="margin:0"><table>
+<tr><th>반품사유</th><th>부수</th><th>비중</th></tr>
+<tr><td>기간만료반품</td><td>362,259</td><td>42.8%</td></tr>
+<tr><td>개정판교체</td><td>207,645</td><td>24.5%</td></tr>
+<tr><td>재고조정</td><td>192,006</td><td>22.7%</td></tr>
+<tr><td>파본</td><td>73,128</td><td>8.6%</td></tr>
+<tr><td>오배송</td><td>12,221</td><td>1.4%</td></tr>
+<tr class="sum"><td>합계</td><td>847,259</td><td>100.0%</td></tr>
+</table></div>
+<div class="chart" style="margin:0"><p class="ct">파본 점유율 vs 출고 점유율 (브랜드별)</p><p class="cs">묶음 기준: 시리즈명 첫 단어(브랜드) · 집중도 = 파본 점유율 ÷ 출고 점유율</p>
+<div class="legend"><span><i style="background:var(--s2)"></i>파본 점유율</span><span><i style="background:var(--gray)"></i>출고 점유율</span></div><div id="c-pb"></div></div>
+</div>
+<div class="tbl"><table>
+<tr><th>시리즈(파본 비중 상위)</th><th>파본</th><th>총 반품</th><th>파본 비중</th></tr>
+<tr><td>실전만점 수학 고1</td><td>19,496</td><td>42,385</td><td>46.0%</td></tr>
+<tr><td>실전만점 국어 고1</td><td>10,247</td><td>23,290</td><td>44.0%</td></tr>
+<tr><td>실전만점 영어 고2</td><td>4,363</td><td>10,144</td><td>43.0%</td></tr>
+<tr><td>실전만점 과학 고1</td><td>3,036</td><td>7,407</td><td>41.0%</td></tr>
+<tr><td>실전만점 수학 고2</td><td>13,316</td><td>35,053</td><td>38.0%</td></tr>
+<tr><td>실전만점 과학 고2</td><td>796</td><td>2,209</td><td>36.0%</td></tr>
+<tr><td>실전만점 영어 고1</td><td>9,054</td><td>25,867</td><td>35.0%</td></tr>
+<tr><td>실전만점 국어 고2</td><td>806</td><td>2,441</td><td>33.0%</td></tr>
+<tr><td class="l">(9위) 기출정복 수학 고2</td><td>958</td><td>10,909</td><td>8.8%</td></tr>
+</table></div>
+<ul>
+<li>실전만점 8종 = 파본 61,114부, 전사 파본의 83.6% vs 출고 점유율 26.2% → <b>집중도 3.18배</b>. 그 외 브랜드 집중도 0.00~0.46배</li>
+<li>실전만점 반품 전표 묶음(월×거래처×시리즈) 108건 전부에 파본 행 동반, 비중 33~46% 좁은 범위</li>
+<li>폐기 제작원가(파본 전량 재판매 불가 가정): 전사 73,128부 × 제작원가 = 4.71억원 → 연 2.35억원 · 실전만점 3.99억원 → <b>연 2.0억원</b> (24개월 ÷ 2)</li>
+</ul>
+<p class="judge"><b>→ 판단:</b> 파본은 실전만점 계열 구조적 문제. 반품 건마다 비중이 일정하다는 점은 실제 공정 불량(인쇄 로트·제본·물류 파손)일 수도, 전표 사유 일괄 분할 기재 관행일 수도 있음 — 원인 단정 불가, 로트·전표 대조 필요</p>
+
+<h2><span class="no">7</span>종합 — 성격이 다른 금액 분리</h2>
+<div class="tbl"><table>
+<tr><th class="l">라벨</th><th class="l">구성</th><th>연간(24개월÷2)</th><th>연간(최근 12개월)</th></tr>
+<tr><td class="l"><span class="lab a">매출 착시 / 플로우</span></td><td class="l">반품으로 지워지는 매출(반품액)</td><td><b>48.3억</b></td><td>57.1억</td></tr>
+<tr><td class="l" rowspan="4"><span class="lab b">현금 손실 / 플로우</span></td><td class="l">왕복 물류비(반품 전량 × 1,400원, 가정)</td><td>5.9억</td><td>6.9억</td></tr>
+<tr><td class="l">폐기 제작원가(개정판교체 5.9 + 파본 2.4)</td><td>8.3억</td><td>10.5억</td></tr>
+<tr><td class="l">공급률 침식(온라인몰 3곳, ⓐ)</td><td>1.9억</td><td>1.9억</td></tr>
+<tr class="sum"><td class="l">현금 손실 소계</td><td><b>16.1억</b></td><td>19.3억</td></tr>
+<tr><td class="l" rowspan="4"><span class="lab c">회수 가능분 / 조건부</span></td><td class="l">한솔북센 초과 반품 138,000부/년 — 매출 15.5억 · 현금 4.3억</td><td>—</td><td>—</td></tr>
+<tr><td class="l">밀어내기 구간 초과 반품 104,500부/년 — 매출 11.7억 · 현금 5.5억</td><td>—</td><td>—</td></tr>
+<tr><td class="l">중복(한솔북센 구간 초과 반품) 60,300부/년 — 매출 −6.8억 · 현금 −3.2억</td><td>—</td><td>—</td></tr>
+<tr class="sum"><td class="l">중복 제거 후 — 매출 20.4억 · 현금 6.6억</td><td>—</td><td>—</td></tr>
+</table></div>
+<p class="note">물류비 1,400원/부는 데이터에 없는 유일한 외부 가정값(참고 범위 1,000~1,800원) — 자사 실제 물류 단가로 교체 필요. 밀어내기 초과 반품 = 구간 반품 305,470 − 구간 출고 827,730 × 구간 외 반품률 11.65%. 중복 = 한솔북센 구간 반품 152,619 − 한솔북센 구간 출고 274,190 × 11.65%. 회수 현금 = 초과 부수 × (물류비 + 폐기 비중 × 제작원가)</p>
+<p class="judge"><b>→ 판단:</b> 단순 합산(매출 착시 48.3 + 현금 손실 16.1 = 64.4억)은 매출 감소분과 비용을 섞은 값이라 손익 영향 그대로가 아님. 회수 가능분은 위 두 라벨의 부분집합 — 별도 합산 금지</p>
+<h3>협의 조건 산출 근거 (문서 1 모듈 5 · 문서 2 인용값)</h3>
+<div class="tbl"><table>
+<tr><th class="l">항목</th><th class="l">산식</th><th>값</th></tr>
+<tr><td class="l">한솔북센 연 출고</td><td class="l">1,014,080 ÷ 2</td><td>507,040부</td></tr>
+<tr><td class="l">반품률 25% 달성 시 반품 감소</td><td class="l">507,040 × (37.64% − 25%)</td><td>64,094부/년</td></tr>
+<tr><td class="l">→ 당사 절감(물류+폐기)</td><td class="l">64,094 × (1,400 + 29.5% × 5,877)</td><td>약 2.0억/년</td></tr>
+<tr><td class="l">반품률 30% 달성 시 절감</td><td class="l">38,742부 × (1,400 + 29.5% × 5,877)</td><td>약 1.2억/년</td></tr>
+<tr><td class="l">인센티브: 공급률 0.5%p 인하 비용</td><td class="l">최근 1년 정가 출고액 87.55억 × 0.5%p</td><td>약 0.44억/년</td></tr>
+<tr><td class="l">물류비 분담(초과분 700원/부)</td><td class="l">64,094 × 700</td><td>약 0.45억/년</td></tr>
+<tr><td class="l">주문 20% 감축 + 반품률 25% 시 실판매</td><td class="l">507,040 × 0.8 × 0.75 vs 632,372 ÷ 2</td><td>304,224 vs 316,186부(−3.8%)</td></tr>
+<tr><td class="l">같은 조건 왕복 반품 물량</td><td class="l">405,632 × 0.25 vs 381,708 ÷ 2</td><td>101,408 vs 190,854부(−46.9%)</td></tr>
+<tr><td class="l">한솔북센 반품 손실(24개월)</td><td class="l">381,708 × 1,400 + 재판매 불가 112,587부 × 제작원가</td><td>5.34억 + 6.60억 = 11.94억</td></tr>
+</table></div>
+<div class="chart"><p class="ct">연간 현금 손실 구성 (24개월 ÷ 2 기준, 억원)</p><div id="c-cash"></div></div>
+
+<h2><span class="no">■</span>우선순위 액션 보드</h2>
+<div class="tbl"><table>
+<tr><th>순위</th><th class="l">발견 항목</th><th class="l">연간 임팩트</th><th class="l">당장 할 일 1가지</th><th>권장 기한</th></tr>
+<tr><td>1</td><td class="l">한솔북센 구조적 고반품(37.6%, 타사 3.6배)</td><td class="l">매출 15.5억 · 현금 4.3억</td><td class="l">거래조건 개선 협의 공문 발송(반품률 상한·물류비 분담)</td><td>2026-01-02(금)</td></tr>
+<tr><td>2</td><td class="l">실전만점 수학 고2 개정(2026-01) 직후 반품 도래</td><td class="l">현금 약 2.3억(추정, 1회성)</td><td class="l">구판 추가 출고 중단 확인, 거래처별 회수 일정·검품 인력 확정</td><td>2026-01-09(금)</td></tr>
+<tr><td>3</td><td class="l">개정판 직전 구판 밀어내기(평상시 4.6~5.4배)</td><td class="l">매출 11.7억 · 현금 5.5억(중복 포함)</td><td class="l">M-3/M-2/M-1 출고 상한·예외 승인 절차 시행 — 첫걸음 영어 초5부터</td><td>2026-01-16(금)</td></tr>
+<tr><td>4</td><td class="l">실전만점 파본 집중(집중도 3.18배)</td><td class="l">폐기원가 2.0억</td><td class="l">인쇄·제본 로트와 파본 반품 전표 대조</td><td>2026-01-30(금)</td></tr>
+<tr><td>5</td><td class="l">온라인몰 3곳 공급률 하락(연 −1.5%p)</td><td class="l">1.9억</td><td class="l">3곳 계약서·프로모션 분담 약정과 실적 단가 대조</td><td>2026-01-30(금)</td></tr>
+</table></div>
+
+<h2><span class="no">■</span>종합 임팩트 클로징</h2>
+<ul>
+<li>① 표본: 거래처 12곳 · 출고 시리즈 59종(마스터 60종) · 2024-01~2025-12 24개월 · 누적 출고 5,480,230부</li>
+<li>② <span class="lab a">매출 착시</span> 연 48.3억원 + <span class="lab b">현금 손실</span> 연 16.1억원 = 단순 합산 64.4억원 (24개월 ÷ 2, 물류비 1,400원/부 가정). <span class="lab c">회수 가능분</span> 매출 20.4억원·현금 6.6억원은 위 금액의 부분집합 — 구조 개선 시 줄어드는 조건부 금액, 확정 절감액 아님</li>
+<li>③ 체감 비교: 현금 손실 16.1억원 = 연간 출고 기준 매출 321.6억원의 5.0%, 하루책방닷컴(출고 매출 7위) 연간 출고 거래액 17.9억원의 90% (24개월 ÷ 2 기준)</li>
+</ul>
+
+<h2><span class="no">■</span>확인해볼 것</h2>
+<ul>
+<li>한솔북센 반품 중 개정판과 무관한 기간만료·재고조정이 266,360부(69.8%) — 매대 회전·주문 방식·재고 관리 방식 현장 확인 필요(데이터로 원인 확인 불가)</li>
+<li>실전만점 반품 108건 전부에 파본 행이 33~46% 비중으로 동반 — 실제 공정 불량인지, 반품 전표 사유 기재 관행인지 물류센터 검품 기록과 대조 필요</li>
+</ul>
+
+<h2><span class="no">■</span>이어서 물어보실 질문</h2>
+<div class="qs"><div>1. "반품 많은 거래처 순위 다시 뽑아줘"</div><div>2. "개정판 나올 시리즈 출고 얼마나 줄여?"</div><div>3. "확인문제 5개 더 만들어줘"</div></div>
+</section>
+
+<section class="pane" id="d1" hidden><div class="md" id="md-d1"></div></section>
+<section class="pane" id="d2" hidden><div class="md" id="md-d2"></div></section>
+<section class="pane" id="ck" hidden><div class="md" id="md-ck"></div></section>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script type="text/markdown" id="src-d1">%%DOC1%%</script>
+<script type="text/markdown" id="src-d2">%%DOC2%%</script>
+<script type="text/markdown" id="src-ck">%%CHECK%%</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script>
+const D=%%DATA%%;
+const $=s=>document.querySelector(s);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const nf=n=>n.toLocaleString('ko-KR');
+const pct=(x,d=1)=>(x*100).toFixed(d)+'%';
+const NS='http://www.w3.org/2000/svg';
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+const tip=$('#tip');
+function showTip(ev,txt){tip.textContent=txt;tip.hidden=false;const x=Math.min(ev.clientX+14,innerWidth-270);tip.style.left=x+'px';tip.style.top=(ev.clientY+14)+'px'}
+function hideTip(){tip.hidden=true}
+function hit(node,txt){node.addEventListener('mousemove',e=>showTip(e,typeof txt==='function'?txt():txt));node.addEventListener('mouseleave',hideTip);node.style.cursor='default'}
+function frame(host,h,ml=52,mr=14,mt=10,mb=26){host.innerHTML='';const W=Math.max(host.clientWidth,300);const svg=el('svg',{viewBox:`0 0 ${W} ${h}`,width:'100%',height:h,role:'img'},host);return {svg,W,h,ml,mr,mt,mb,iw:W-ml-mr,ih:h-mt-mb}}
+function yAxis(f,max,ticks,fmt,min=0){const g=el('g',{},f.svg);for(let i=0;i<=ticks;i++){const v=min+(max-min)*i/ticks;const y=f.mt+f.ih-(v-min)/(max-min)*f.ih;el('line',{x1:f.ml,x2:f.W-f.mr,y1:y,y2:y,stroke:css('--rule'),'stroke-width':1},g);const t=el('text',{x:f.ml-6,y:y+4,'text-anchor':'end','font-size':11,fill:css('--ink-3')},g);t.textContent=fmt(v)}}
+function xLabels(f,labels,step,xOf){labels.forEach((l,i)=>{if(i%step)return;const t=el('text',{x:xOf(i),y:f.h-8,'text-anchor':'middle','font-size':11,fill:css('--ink-3')},f.svg);t.textContent=l})}
+
+function cMonthly(){const host=$('#c-monthly');const f=frame(host,240,56);const m=D.monthly;const max=350000;yAxis(f,max,5,v=>v?(v/10000)+'만':'0');
+ const bw=f.iw/m.length;m.forEach((d,i)=>{const x=f.ml+i*bw;const w=Math.max((bw-6)/2,2);
+  [[d.ship,css('--s1'),0],[d.ret,css('--s2'),1]].forEach(([v,c,k])=>{const hh=v/max*f.ih;if(hh>0)el('rect',{x:x+3+k*(w+2),y:f.mt+f.ih-hh,width:w,height:hh,rx:Math.min(2,w/2),fill:c},f.svg)});
+  const r=el('rect',{x,y:f.mt,width:bw,height:f.ih,fill:'transparent'},f.svg);hit(r,`${d.m}\n출고 ${nf(d.ship)}부\n반품 ${nf(d.ret)}부\n당월 반품률 ${pct(d.ret/d.ship)}`)});
+ xLabels(f,m.map(d=>d.m.slice(2)),3,i=>f.ml+i*bw+bw/2)}
+
+function tbPartner(){const P=D.partners;let h='<tr><th>거래처</th><th>출고부수</th><th>반품부수</th><th>실판매부수</th><th>반품률</th><th>출고 기준 매출</th><th>실판매 기준 매출</th><th>평균 공급률</th><th>출고 순위</th><th>실판매 순위</th><th>이동</th></tr>';
+ const s={ship:0,ret:0,rev:0,net:0};P.forEach(p=>{const mv=p.r1-p.r2;s.ship+=p.ship;s.ret+=p.ret;s.rev+=p.rev;s.net+=p.netrev;
+ h+=`<tr${p.n==='한솔북센'?' class="hi"':''}><td>${p.n}</td><td>${nf(p.ship)}</td><td>${nf(p.ret)}</td><td>${nf(p.ship-p.ret)}</td><td>${pct(p.rate)}</td><td>${p.rev.toFixed(2)}</td><td>${p.netrev.toFixed(2)}</td><td>${pct(p.sr,2)}</td><td>${p.r1}</td><td>${p.r2}</td><td>${mv>0?'<span class="up">▲'+mv+'</span>':mv<0?'<span class="dn">▼'+(-mv)+'</span>':'—'}</td></tr>`});
+ h+=`<tr class="sum"><td>합계</td><td>${nf(s.ship)}</td><td>${nf(s.ret)}</td><td>${nf(s.ship-s.ret)}</td><td>${pct(s.ret/s.ship)}</td><td>643.29</td><td>546.75</td><td>67.31%</td><td></td><td></td><td></td></tr>`;$('#tb-partner').innerHTML=h}
+
+function cSlope(){const host=$('#c-slope');const P=D.partners;const f=frame(host,330,10,10,18,10);const xl=f.W*0.34,xr=f.W*0.66;const y=r=>f.mt+(r-1)*(f.ih-6)/11+4;
+ [['출고 기준',xl],['실판매 기준',xr]].forEach(([t,x])=>{const e=el('text',{x,y:12,'text-anchor':'middle','font-size':11,fill:css('--ink-3')},f.svg);e.textContent=t});
+ P.forEach(p=>{const mv=p.r1-p.r2;const c=mv<0?css('--crit'):mv>0?css('--s1'):css('--gray');
+  el('line',{x1:xl,y1:y(p.r1)+6,x2:xr,y2:y(p.r2)+6,stroke:c,'stroke-width':mv?2.5:1.5},f.svg);
+  [[xl,p.r1],[xr,p.r2]].forEach(([x,r])=>el('circle',{cx:x,cy:y(r)+6,r:4,fill:c,stroke:css('--surface'),'stroke-width':2},f.svg));
+  const a=el('text',{x:xl-10,y:y(p.r1)+10,'text-anchor':'end','font-size':11.5,fill:css('--ink'),'font-weight':mv?700:400},f.svg);a.textContent=`${p.r1}. ${p.n}`;
+  const b=el('text',{x:xr+10,y:y(p.r2)+10,'font-size':11.5,fill:css('--ink'),'font-weight':mv?700:400},f.svg);b.textContent=`${p.r2}. ${p.n}`;
+  const r=el('rect',{x:0,y:y(p.r1)-4,width:f.W,height:20,fill:'transparent'},f.svg);hit(r,`${p.n}\n출고 기준 ${p.rev.toFixed(1)}억 (${p.r1}위)\n실판매 기준 ${p.netrev.toFixed(1)}억 (${p.r2}위)`)})}
+
+function cRate(){const host=$('#c-rate');const P=[...D.partners].sort((a,b)=>b.rate-a.rate);const f=frame(host,330,92,40,6,22);const max=0.4;const bh=f.ih/P.length;
+ for(let i=0;i<=4;i++){const v=i*0.1;const x=f.ml+v/max*f.iw;el('line',{x1:x,x2:x,y1:f.mt,y2:f.mt+f.ih,stroke:css('--rule')},f.svg);const t=el('text',{x,y:f.h-6,'text-anchor':'middle','font-size':11,fill:css('--ink-3')},f.svg);t.textContent=Math.round(v*100)+'%'}
+ P.forEach((p,i)=>{const y=f.mt+i*bh;const w=p.rate/max*f.iw;const c=p.n==='한솔북센'?css('--crit'):css('--s1');
+  el('rect',{x:f.ml,y:y+3,width:w,height:bh-6,rx:2,fill:c},f.svg);
+  const t=el('text',{x:f.ml-6,y:y+bh/2+4,'text-anchor':'end','font-size':11.5,fill:css('--ink')},f.svg);t.textContent=p.n;
+  const v=el('text',{x:f.ml+w+4,y:y+bh/2+4,'font-size':11,fill:css('--ink-2')},f.svg);v.textContent=pct(p.rate);
+  const r=el('rect',{x:0,y,width:f.W,height:bh,fill:'transparent'},f.svg);hit(r,`${p.n}\n반품률 ${pct(p.rate,2)}\n반품 ${nf(p.ret)} / 출고 ${nf(p.ship)}`)});
+ [[0.1546,'전사 15.5%'],[0.1042,'한솔 제외 10.4%']].forEach(([v,l],k)=>{const x=f.ml+v/max*f.iw;el('line',{x1:x,x2:x,y1:f.mt,y2:f.mt+f.ih,stroke:css('--ink-2'),'stroke-width':1.5},f.svg)})}
+
+function cHs(){const host=$('#c-hs');const H=D.hs;const f=frame(host,240,44);const max=1;yAxis(f,max,5,v=>Math.round(v*100)+'%');const n=H.length;const xOf=i=>f.ml+i*(f.iw/(n-1));
+ const oth=D.monthly.map((m,i)=>{const s=m.ship-H[i].ship,r=m.ret-H[i].ret;return r/s});
+ const line=(vals,c,w)=>{let d='';vals.forEach((v,i)=>{d+=(i?'L':'M')+xOf(i)+','+(f.mt+f.ih-v/max*f.ih)});el('path',{d,fill:'none',stroke:c,'stroke-width':w,'stroke-linejoin':'round'},f.svg)};
+ line(oth,css('--gray'),2);line(H.map(d=>d.rate),css('--s2'),2);line(H.map(d=>d.cum),css('--s1'),2.5);
+ H.forEach((d,i)=>{const r=el('rect',{x:xOf(i)-f.iw/(n-1)/2,y:f.mt,width:f.iw/(n-1),height:f.ih,fill:'transparent'},f.svg);hit(r,`${d.m}\n출고 ${nf(d.ship)} · 반품 ${nf(d.ret)}\n당월 ${pct(d.rate)} · 누적 ${pct(d.cum)}\n타 11개사 당월 ${pct(oth[i])}`)});
+ const e=H[n-1];el('circle',{cx:xOf(n-1),cy:f.mt+f.ih-e.cum*f.ih,r:4,fill:css('--s1'),stroke:css('--surface'),'stroke-width':2},f.svg);
+ xLabels(f,H.map(d=>d.m.slice(2)),3,xOf)}
+function tbHs(){let h='<tr><th>월</th><th>출고</th><th>반품</th><th>당월 반품률</th><th>누적 반품률</th><th>월</th><th>출고</th><th>반품</th><th>당월 반품률</th><th>누적 반품률</th></tr>';const H=D.hs;
+ for(let i=0;i<12;i++){const a=H[i],b=H[i+12];const c=d=>`<td>${d.m}</td><td>${nf(d.ship)}</td><td>${nf(d.ret)}</td><td>${pct(d.rate)}</td><td>${pct(d.cum)}</td>`;h+='<tr>'+c(a)+c(b)+'</tr>'}
+ h+='<tr class="sum"><td>합계</td><td>1,014,080</td><td>381,708</td><td colspan="2">누적 37.6%</td><td colspan="5"></td></tr>';$('#tb-hs').innerHTML=h}
+
+function cEv(){const host=$('#c-ev');const cols=['--s1','--s2','--s3','--s4','--s5','--s7'];$('#lg-ev').innerHTML=D.ev.map((e,i)=>`<span><i class="ln" style="background:var(${cols[i]})"></i>${e.s} (${e.M})</span>`).join('');
+ const f=frame(host,260,40);const max=8;yAxis(f,max,4,v=>v+'×');const labs=['M-6','M-5','M-4','M-3','M-2','M-1','M','M+1','M+2','M+3'];const xOf=i=>f.ml+i*(f.iw/9);
+ el('rect',{x:xOf(2.5),y:f.mt,width:xOf(5.5)-xOf(2.5),height:f.ih,fill:css('--crit-soft')},f.svg);
+ const by=f.mt+f.ih-1/max*f.ih;el('line',{x1:f.ml,x2:f.W-f.mr,y1:by,y2:by,stroke:css('--ink-2'),'stroke-width':1.5},f.svg);
+ D.ev.forEach((e,k)=>{let d='',st=false;e.pts.forEach((v,i)=>{if(v===null){st=false;return}d+=(st?'L':'M')+xOf(i)+','+(f.mt+f.ih-v/max*f.ih);st=true});el('path',{d,fill:'none',stroke:css(cols[k]),'stroke-width':2,'stroke-linejoin':'round'},f.svg)});
+ labs.forEach((l,i)=>{const r=el('rect',{x:xOf(i)-f.iw/18,y:f.mt,width:f.iw/9,height:f.ih,fill:'transparent'},f.svg);hit(r,l+'\n'+D.ev.map(e=>`${e.s}: ${e.pts[i]===null?'데이터 밖':e.pts[i].toFixed(2)+'×'}`).join('\n'))});
+ xLabels(f,labs,1,xOf)}
+
+function cShare(){const host=$('#c-share');const S=D.share.slice(0,6);const f=frame(host,250,86,40,6,22);const max=0.35;const bh=f.ih/S.length;
+ for(let i=0;i<=7;i++){const v=i*0.05;if(v>max)break;const x=f.ml+v/max*f.iw;el('line',{x1:x,x2:x,y1:f.mt,y2:f.mt+f.ih,stroke:css('--rule')},f.svg);if(i%2===0){const t=el('text',{x,y:f.h-6,'text-anchor':'middle','font-size':11,fill:css('--ink-3')},f.svg);t.textContent=Math.round(v*100)+'%'}}
+ S.forEach((s,i)=>{const y=f.mt+i*bh;const w1=s.win/max*f.iw,w2=s.out/max*f.iw;const g=(bh-8)/2;
+  el('rect',{x:f.ml,y:y+3,width:w1,height:g,rx:2,fill:css('--s1')},f.svg);el('rect',{x:f.ml,y:y+3+g+2,width:w2,height:g,rx:2,fill:css('--gray')},f.svg);
+  const t=el('text',{x:f.ml-6,y:y+bh/2+4,'text-anchor':'end','font-size':11.5,fill:css('--ink')},f.svg);t.textContent=s.n;
+  const v=el('text',{x:f.ml+w1+4,y:y+3+g-1,'font-size':10.5,fill:css('--ink-2')},f.svg);v.textContent=pct(s.win);
+  const r=el('rect',{x:0,y,width:f.W,height:bh,fill:'transparent'},f.svg);hit(r,`${s.n}\nM-3~M-1 비중 ${pct(s.win)}\n평상시 비중 ${pct(s.out)}`)})}
+
+function tbSr(){const rows=[['북웨이브몰',71.31,69.86,-1.46,-2.84,-1.48,60.62,88.5,89.9],['페이지온몰',71.11,69.60,-1.51,-3.00,-1.57,42.60,64.3,66.8],['하루책방닷컴',71.54,70.02,-1.53,-2.82,-1.47,24.94,38.1,36.7]];
+ const flat=[['한솔북센',64.48,64.47,-0.02],['대명서적유통',65.03,64.98,-0.05],['남강교재총판',64.51,64.45,-0.06],['세림북유통',64.84,64.81,-0.03],['책마루서점',70.00,70.07,0.07],['글벗문고',70.21,70.18,-0.04],['한빛서림',69.74,69.82,0.08],['청람서점',70.10,70.12,0.02],['다온북스',69.99,69.99,0.00]];
+ let h='<tr><th>거래처</th><th>2024</th><th>2025</th><th>ⓐ 연도 평균 차</th><th>첫·끝 달 차</th><th>ⓑ 연율화</th><th>최근 1년 정가 출고액</th><th>침식액 ⓐ(백만원)</th><th>침식액 ⓑ(백만원)</th><th class="l">판정</th></tr>';
+ rows.forEach(r=>{h+=`<tr class="hi"><td>${r[0]}</td><td>${r[1].toFixed(2)}%</td><td>${r[2].toFixed(2)}%</td><td class="dn">${r[3].toFixed(2)}%p</td><td>${r[4].toFixed(2)}%p</td><td>${r[5].toFixed(2)}%p</td><td>${r[6].toFixed(2)}억</td><td>${r[7].toFixed(1)}</td><td>${r[8].toFixed(1)}</td><td class="l">하락</td></tr>`});
+ h+='<tr class="sum"><td>하락 3곳 소계</td><td></td><td></td><td></td><td></td><td></td><td>128.16억</td><td>190.9</td><td>193.4</td><td></td></tr>';
+ flat.forEach(r=>{h+=`<tr><td>${r[0]}</td><td>${r[1].toFixed(2)}%</td><td>${r[2].toFixed(2)}%</td><td>${r[3].toFixed(2)}%p</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="l">변동 없음</td></tr>`});$('#tb-sr').innerHTML=h}
+
+function cSr(){const host=$('#c-sr');const f=frame(host,250,46);const min=0.62,max=0.74;yAxis(f,max,6,v=>(v*100).toFixed(0)+'%',min);const months=D.monthly.map(m=>m.m);const xOf=i=>f.ml+i*(f.iw/(months.length-1));
+ const hl={'북웨이브몰':'--s1','페이지온몰':'--s2','하루책방닷컴':'--s3'};const names=Object.keys(D.sr).sort((a,b)=>(a in hl)-(b in hl));
+ names.forEach(n=>{let d='';months.forEach((m,i)=>{const v=D.sr[n][m];if(v===undefined)return;d+=(d?'L':'M')+xOf(i)+','+(f.mt+f.ih-(v-min)/(max-min)*f.ih)});const c=hl[n]?css(hl[n]):css('--gray');el('path',{d,fill:'none',stroke:c,'stroke-width':hl[n]?2:1.2,'stroke-linejoin':'round'},f.svg)});
+ months.forEach((m,i)=>{const r=el('rect',{x:xOf(i)-f.iw/46,y:f.mt,width:f.iw/23,height:f.ih,fill:'transparent'},f.svg);hit(r,m+'\n'+Object.keys(hl).map(n=>`${n} ${D.sr[n][m]!==undefined?pct(D.sr[n][m],2):'—'}`).join('\n'))});
+ xLabels(f,months.map(m=>m.slice(2)),3,xOf)}
+
+function cPb(){const host=$('#c-pb');const B=D.pabon;const f=frame(host,250,70,58,6,22);const max=0.9;const bh=f.ih/B.length;
+ for(let i=0;i<=4;i++){const v=i*0.2;const x=f.ml+v/max*f.iw;el('line',{x1:x,x2:x,y1:f.mt,y2:f.mt+f.ih,stroke:css('--rule')},f.svg);const t=el('text',{x,y:f.h-6,'text-anchor':'middle','font-size':11,fill:css('--ink-3')},f.svg);t.textContent=(v*100).toFixed(0)+'%'}
+ B.forEach((b,i)=>{const y=f.mt+i*bh;const g=(bh-8)/2;el('rect',{x:f.ml,y:y+3,width:b.rs/max*f.iw,height:g,rx:2,fill:css('--s2')},f.svg);el('rect',{x:f.ml,y:y+5+g,width:b.ss/max*f.iw,height:g,rx:2,fill:css('--gray')},f.svg);
+  const t=el('text',{x:f.ml-6,y:y+bh/2+4,'text-anchor':'end','font-size':11.5,fill:css('--ink')},f.svg);t.textContent=b.b;
+  const v=el('text',{x:f.ml+Math.max(b.rs,b.ss)/max*f.iw+4,y:y+bh/2+4,'font-size':11,fill:css('--ink-2'),'font-weight':b.c>1?700:400},f.svg);v.textContent=b.c.toFixed(2)+'배';
+  const r=el('rect',{x:0,y,width:f.W,height:bh,fill:'transparent'},f.svg);hit(r,`${b.b}\n파본 점유율 ${pct(b.rs)}\n출고 점유율 ${pct(b.ss)}\n집중도 ${b.c.toFixed(2)}배`)})}
+
+function cCash(){const host=$('#c-cash');const items=[['왕복 물류비',5.93,'--s1'],['개정판교체 폐기',5.93,'--s2'],['파본 폐기',2.35,'--s5'],['공급률 침식',1.91,'--s7']];const tot=16.12;const f=frame(host,92,8,8,8,8);
+ let x=f.ml;items.forEach(([n,v,c])=>{const w=v/tot*f.iw-2;el('rect',{x,y:f.mt,width:w,height:36,rx:3,fill:css(c)},f.svg);const r=el('rect',{x,y:f.mt,width:w,height:36,fill:'transparent'},f.svg);hit(r,`${n} 연 ${v.toFixed(2)}억원`);
+  const t=el('text',{x:x+4,y:f.mt+56,'font-size':11.5,fill:css('--ink')},f.svg);t.textContent=`${n} ${v.toFixed(1)}억`;x+=w+2})}
+
+function renderAll(){cMonthly();cSlope();cRate();cHs();cEv();cShare();cSr();cPb();cCash()}
+(()=>{let cs=0,cr=0;D.hs.forEach(d=>{cs+=d.ship;cr+=d.ret;d.rate=d.ship?d.ret/d.ship:0;d.cum=cs?cr/cs:0})})();
+tbPartner();tbHs();tbSr();renderAll();
+let rt;addEventListener('resize',()=>{clearTimeout(rt);rt=setTimeout(renderAll,150)});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',renderAll);
+new MutationObserver(renderAll).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+function md(id,src){try{$(id).innerHTML=marked.parse($(src).textContent)}catch(e){$(id).textContent=$(src).textContent}}
+md('#md-d1','#src-d1');md('#md-d2','#src-d2');md('#md-ck','#src-ck');
+document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('nav.tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));document.querySelectorAll('section.pane').forEach(s=>s.hidden=s.id!==b.dataset.p);if(b.dataset.p==='p1')renderAll();scrollTo({top:0})}));
+if(location.hash){const b=document.querySelector(`nav.tabs button[data-p="${location.hash.slice(1)}"]`);if(b)b.click()}
+</script>
