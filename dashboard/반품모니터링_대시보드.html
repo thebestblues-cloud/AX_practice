@@ -103,10 +103,12 @@ input[type=range]{width:220px;accent-color:var(--accent)}
   <nav class="tabs" role="tablist" id="tabs">
     <button role="tab" data-t="sum" aria-selected="true">요약<span class="cnt" id="cnt" hidden></span></button>
     <button role="tab" data-t="ptn" aria-selected="false">거래처</button>
-    <button role="tab" data-t="lag" aria-selected="false">시차·예측</button>
-    <button role="tab" data-t="cl" aria-selected="false">군집</button>
-    <button role="tab" data-t="pl" aria-selected="false">공헌이익·손익분기</button>
+    <button role="tab" data-t="rsn" aria-selected="false">반품사유</button>
+    <button role="tab" data-t="sup" aria-selected="false">공급률</button>
     <button role="tab" data-t="rev" aria-selected="false">개정판</button>
+    <button role="tab" data-t="lag" aria-selected="false">시차·예측</button>
+    <button role="tab" data-t="cl" aria-selected="false">거래처 분류</button>
+    <button role="tab" data-t="pl" aria-selected="false">공헌이익·손익분기</button>
     <button role="tab" data-t="data" aria-selected="false">데이터 등록</button>
   </nav>
 </div></div>
@@ -115,7 +117,9 @@ input[type=range]{width:220px;accent-color:var(--accent)}
   <div id="empty" class="empty" hidden></div>
 
   <section class="pane" id="p-sum">
+    <div class="judge" id="headline" style="font-size:15px"></div>
     <div class="kpis" id="kpis"></div>
+    <div class="card"><h3>손실 종합 — 성격이 다른 금액 분리</h3><p class="sub" id="synSub"></p><div class="tbl" style="margin-top:8px"><table id="tb-syn"></table></div><p class="note" id="synNote"></p></div>
     <div class="grid2">
       <div class="card"><h3>월별 출고·반품과 향후 3개월 예상 반품</h3><p class="sub" id="sumSub"></p>
         <div class="legend"><span><i style="background:var(--s1)"></i>출고</span><span><i style="background:var(--s2)"></i>반품</span><span><i style="background:var(--s4)"></i>예상 반품</span></div><div id="c-sum"></div></div>
@@ -126,6 +130,24 @@ input[type=range]{width:220px;accent-color:var(--accent)}
   <section class="pane" id="p-ptn" hidden>
     <div><h2>거래처 현황</h2><p class="sub">열 제목을 누르면 정렬 · 행을 누르면 상세. 반품액은 (거래처×시리즈) 출고 가중평균 단가 환산</p></div>
     <div class="tbl"><table id="tb-ptn"></table></div>
+  </section>
+
+  <section class="pane" id="p-rsn" hidden>
+    <div><h2>반품사유 — 공정 신호 역추적</h2><p class="sub">묶음 기준: 시리즈명 첫 단어(브랜드) · 집중도 = 파본 점유율 ÷ 출고 점유율 · 파본은 재판매 불가로 보고 제작원가 전액 폐기</p></div>
+    <div class="judge" id="rsnJudge"></div>
+    <div class="grid2">
+      <div class="tbl" style="align-self:start"><table id="tb-rsn"></table></div>
+      <div class="card"><h3>브랜드별 파본 점유율 vs 출고 점유율</h3><div class="legend"><span><i style="background:var(--s2)"></i>파본 점유율</span><span><i style="background:var(--gray)"></i>출고 점유율</span></div><div id="c-pb"></div></div>
+    </div>
+    <div class="tbl"><table id="tb-pbs"></table></div>
+    <p class="note">원인(인쇄 로트·제본·물류 파손·전표 기재 관행)은 데이터로 단정 불가 — 로트·검품 기록 대조 대상</p>
+  </section>
+
+  <section class="pane" id="p-sup" hidden>
+    <div><h2>공급률 — 조용히 깎이는 마진</h2><p class="sub">공급률 = Σ출고액 ÷ Σ(출고부수 × 정가) · 하락 판정: 연도 평균 차 −1.0%p 이하 · 침식액 = 최근 12개월 정가 출고액 × 하락폭</p></div>
+    <div class="judge" id="supJudge"></div>
+    <div class="tbl"><table id="tb-sup"></table></div>
+    <p class="note">ⓐ 연도 평균 차(본문 수치) · ⓑ 첫 달·마지막 달 차를 월수로 나눠 연율화. 하락 원인(계약 개정·프로모션 분담·협상)은 데이터에 없음 — 확인 필요</p>
   </section>
 
   <section class="pane" id="p-lag" hidden>
@@ -140,10 +162,10 @@ input[type=range]{width:220px;accent-color:var(--accent)}
   </section>
 
   <section class="pane" id="p-cl" hidden>
-    <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:end;justify-content:space-between"><div><h2>거래처 군집</h2><p class="sub">특성 5개(반품률·공급률·출고 규모·개정판 직전 물량 비중·파본 비중) 표준화 후 k-평균</p></div>
-      <label class="ctl" for="kSel">군집 수 <select id="kSel"><option>2</option><option selected>3</option><option>4</option></select></label></div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:end;justify-content:space-between"><div><h2>거래처 분류</h2><p class="sub">반품률·공급률·출고 규모·개정판 직전 물량 비중·파본 비중 5가지 특성이 비슷한 거래처끼리 자동으로 묶음</p></div>
+      <label class="ctl" for="kSel">분류 수 <select id="kSel"><option>2</option><option selected>3</option><option>4</option></select></label></div>
     <div class="grid2">
-      <div class="card"><h3>반품률 × 공급률</h3><p class="sub">원 크기 = 출고부수 · 색 = 군집</p><div class="legend" id="lg-cl"></div><div id="c-cl"></div></div>
+      <div class="card"><h3>반품률 × 공급률</h3><p class="sub">원 크기 = 출고부수 · 색 = 분류</p><div class="legend" id="lg-cl"></div><div id="c-cl"></div></div>
       <div id="clCards" style="display:grid;gap:10px;align-content:start"></div>
     </div>
     <div class="tbl"><table id="tb-cl"></table></div>
@@ -166,11 +188,17 @@ input[type=range]{width:220px;accent-color:var(--accent)}
     <div class="judge" id="revJudge"></div>
     <div class="card"><h3>예정 개정판 — 상한 대비 출고</h3><div class="legend"><span><i style="background:var(--s1)"></i>실제 출고</span><span><i class="ln" style="background:var(--crit)"></i>상한</span></div><div id="upc"></div></div>
     <div class="tbl"><table id="tb-ev"></table></div>
+    <p class="note" id="evNote"></p>
+    <div class="grid2">
+      <div><h3>구간 출고 거래처별 분해</h3><div class="tbl"><table id="tb-evp"></table></div></div>
+      <div><h3>출간 후 3개월 반품사유</h3><div class="tbl"><table id="tb-evr"></table></div><p class="note">구판은 개정판 출간 후 재판매 불가 전제 — 개정판교체 부수 × 제작원가 = 폐기 제작원가</p></div>
+    </div>
   </section>
 
   <section class="pane" id="p-data" hidden>
     <div><h2>데이터 등록</h2><p class="sub">월 마감 후 CSV 업로드 → 검증 → 등록. 같은 월을 다시 올리면 그 월의 해당 파일(출고 또는 반품)을 교체</p></div>
     <div class="card"><h3>등록된 월</h3><div class="chips-m" id="regMonths" style="margin-top:6px"></div><p class="note" id="regNote"></p></div>
+    <div class="card"><h3>데이터 정합 점검(기준월까지)</h3><div class="tbl" style="margin-top:8px"><table id="tb-int"></table></div></div>
     <div class="grid2">
       <div class="card form" id="upForm">
         <h3>CSV 업로드</h3>
@@ -368,10 +396,88 @@ input[type=range]{width:220px;accent-color:var(--accent)}
     // 반품률 높은 군집 순으로 번호 재부여
     const order = clusters.slice().sort((a, b) => b.raw.rate - a.raw.rate).map(c => c.j); const remap = Object.fromEntries(order.map((j, i) => [j, i]));
     clusters.forEach(c => c.j = remap[c.j]); clusters.sort((a, b) => a.j - b.j); CL.forEach(c => { c.cl = remap[c.cl]; P[c.n].cl = c.cl; });
+
+    // ---- [절차 1] 데이터 정합
+    const shipSer = new Set(S.map(r => r.s)), pairShip = {}, pairRet = {}, firstS = {}, firstR = {};
+    for (const r of S) { const k = r.p + '|' + r.s; pairShip[k] = (pairShip[k] || 0) + r.q; if (!firstS[k] || r.m < firstS[k]) firstS[k] = r.m; }
+    for (const r of R) { const k = r.p + '|' + r.s; pairRet[k] = (pairRet[k] || 0) + r.q; if (!firstR[k] || r.m < firstR[k]) firstR[k] = r.m; }
+    const mnum = m => +m.slice(0, 4) * 12 + +m.slice(5, 7);
+    const lags = Object.keys(firstR).filter(k => firstS[k]).map(k => mnum(firstR[k]) - mnum(firstS[k])).sort((a, b) => a - b);
+    const INT = { months: NM, first, asOf, partners: PL.length, shipSeries: shipSer.size, retSeries: new Set(R.map(r => r.s)).size,
+      retPartners: new Set(R.map(r => r.p)).size, retPairs: Object.keys(pairRet).length, shipPairs: Object.keys(pairShip).length,
+      orphanPairs: Object.keys(pairRet).filter(k => !pairShip[k]).length, orphanQ: fallback,
+      notInMaster: [...new Set(S.map(r => r.s).concat(R.map(r => r.s)))].filter(x => !M[x]),
+      noShipMaster: Object.keys(M).filter(x => !shipSer.has(x)),
+      overPairs: Object.keys(pairRet).filter(k => pairRet[k] > (pairShip[k] || 0)).length,
+      firstRet: R.length ? R.map(r => r.m).sort()[0] : null,
+      lagMin: lags[0], lagMed: lags.length ? lags[Math.floor((lags.length - 1) / 2)] * 0.5 + lags[Math.ceil((lags.length - 1) / 2)] * 0.5 : null, lagMean: lags.length ? sum(lags) / lags.length : null, lagMax: lags[lags.length - 1] };
+    // ---- [절차 2] 연환산 두 기준
+    T.ann = 12 / NM; T.retamtAnn = T.retamt * T.ann; T.revAnn = T.rev * T.ann;
+    const years = [...new Set(months.map(m => m.slice(0, 4)))];
+    T.byYear = years.map(y => ({ y, ship: sum(S.filter(r => r.m.startsWith(y)).map(r => r.q)), ret: sum(R.filter(r => r.m.startsWith(y)).map(r => r.q)), n: months.filter(m => m.startsWith(y)).length }));
+    // ---- [절차 6] 반품사유
+    const RS = Object.entries(reasons).map(([k, q]) => ({ k, q, sh: q / T.ret, amt: sum(R.filter(r => r.why === k).map(r => r.amt)) })).sort((a, b) => b.q - a.q);
+    const brand = x => x.split(' ')[0];
+    const bS = {}, bR = {}, bP = {}, bPd = {}, sR = {}, sP = {};
+    for (const r of S) add(bS, brand(r.s), r.q);
+    for (const r of R) { add(bR, brand(r.s), r.q); add(sR, r.s, r.q); if (r.why === PABON) { add(bP, brand(r.s), r.q); add(bPd, brand(r.s), r.q * r.cost); add(sP, r.s, r.q); } }
+    const pT = sum(Object.values(bP)), sT = sum(Object.values(bS));
+    const RSN = { rows: RS, pabonQ: pT, pabonDisp: sum(Object.values(bPd)),
+      brands: Object.keys(bS).map(b => ({ b, ship: bS[b], ret: bR[b] || 0, pabon: bP[b] || 0, disp: bPd[b] || 0, rs: (bP[b] || 0) / (pT || 1), ss: bS[b] / sT, inShare: (bP[b] || 0) / (bR[b] || 1) })).map(x => ({ ...x, conc: x.ss ? x.rs / x.ss : 0 })).sort((a, b) => b.conc - a.conc),
+      series: Object.keys(sP).map(x => ({ s: x, pabon: sP[x], ret: sR[x], sh: sP[x] / sR[x] })).sort((a, b) => b.sh - a.sh) };
+    // ---- [절차 5] 공급률 연도 비교·침식액
+    const yA = years.filter(y => months.filter(m => m.startsWith(y)).length >= 6);
+    const SUP = { years: yA, rows: [], loss: 0, lossB: 0, dec: [] };
+    if (yA.length >= 2) { const y0 = yA[yA.length - 2], y1 = yA[yA.length - 1];
+      for (const p of PL) { const a0 = sum(S.filter(r => r.p === p.n && r.m.startsWith(y0)).map(r => r.amt)), l0 = sum(S.filter(r => r.p === p.n && r.m.startsWith(y0)).map(r => r.list));
+        const a1 = sum(S.filter(r => r.p === p.n && r.m.startsWith(y1)).map(r => r.amt)), l1 = sum(S.filter(r => r.p === p.n && r.m.startsWith(y1)).map(r => r.list));
+        const pm = months.map(m => { const a = sum(S.filter(r => r.p === p.n && r.m === m).map(r => r.amt)), l = sum(S.filter(r => r.p === p.n && r.m === m).map(r => r.list)); return l ? { m, v: a / l } : null; }).filter(Boolean);
+        const lst12 = sum(S.filter(r => r.p === p.n && L12s.has(r.m)).map(r => r.list));
+        const row = { n: p.n, y0: l0 ? a0 / l0 : null, y1: l1 ? a1 / l1 : null, lst12 };
+        row.d = row.y0 != null && row.y1 != null ? (row.y1 - row.y0) * 100 : null;
+        if (pm.length > 1) { row.fl = (pm[pm.length - 1].v - pm[0].v) * 100; row.flAnn = row.fl / (mnum(pm[pm.length - 1].m) - mnum(pm[0].m)) * 12; }
+        row.dec = row.d != null && row.d <= -1.0; if (row.dec) { row.lossA = lst12 * -row.d / 100; row.lossB = lst12 * Math.max(-row.flAnn, 0) / 100; SUP.loss += row.lossA; SUP.lossB += row.lossB; SUP.dec.push(p.n); }
+        p.srY = row; SUP.rows.push(row); }
+      SUP.y0 = y0; SUP.y1 = y1; SUP.rows.sort((a, b) => (a.d ?? 0) - (b.d ?? 0)); }
+    // ---- [절차 4] 개정판 보강: 제외 시리즈·구간 사유·평상시 ⓐ·거래처 평상시 비중
+    REV.excluded = Object.entries(M).filter(([s, m]) => /^\d{4}-\d{2}$/.test(m.rev || '') && !(m.rev >= first && m.rev <= asOf)).map(([s, m]) => ({ s, M: m.rev, why: m.rev < first ? '데이터 기간 이전' : '데이터 기간 이후' }));
+    const pr6 = {}; for (const e of done) for (const r of R) if (r.s === e.s && e.post.includes(r.m)) add(pr6, r.why, r.q);
+    REV.postReasons = Object.entries(pr6).map(([k, q]) => ({ k, q, sh: q / (REV.post || 1) })).sort((a, b) => b.q - a.q);
+    REV.dispCost = sum(done.map(e => e.repl * e.cost));
+    for (const e of events) { const sm = serMon[e.s] || {}; e.baseAll = sum(months.filter(x => !e.pre.includes(x)).map(x => sm[x] || 0)) / Math.max(months.length - 3, 1); e.multAll = e.baseAll ? e.win / 3 / e.baseAll : null; }
+    REV.multAll = sum(done.map(e => e.baseAll * 3)) ? REV.win / sum(done.map(e => e.baseAll * 3)) : null;
+    const outP = {}; for (const e of done) for (const r of S) if (r.s === e.s && !e.pre.includes(r.m)) add(outP, r.p, r.q);
+    const outT = sum(Object.values(outP));
+    REV.winPartnerRows = REV.winPartner.map(([p, q]) => ({ p, q, sh: q / (REV.win || 1), normal: (outP[p] || 0) / (outT || 1) }));
+    // ---- [절차 3] 최고 반품률 거래처
+    const HP = PL.filter(p => p.ship > 0).sort((a, b) => b.rate - a.rate)[0];
+    let run = 0, best = 0, end = null;
+    HP.monthly = months.map((m, i) => { const sh = HP.mon[i][0], rt = HP.mon[i][1]; const os = mon[i].ship - sh, or = mon[i].ret - rt; return { m, ship: sh, ret: rt, rate: sh ? rt / sh : null, oth: os ? or / os : null }; });
+    let cs = 0, cr = 0; HP.monthly.forEach(x => { cs += x.ship; cr += x.ret; x.cum = cs ? cr / cs : null; const f = x.rate != null && x.oth != null && x.rate > x.oth; run = f ? run + 1 : 0; if (run > best) { best = run; end = x.m; } });
+    const HI = { n: HP.n, rate: HP.rate, ex: HP.exRate, inc: T.rate, multEx: HP.rate / HP.exRate, multInc: HP.rate / T.rate, simpleEx: sum(PL.filter(p => p !== HP && p.ship).map(p => p.rate)) / (PL.filter(p => p !== HP && p.ship).length || 1),
+      excess: HP.excess, excessAmt: HP.excessAmt, excessAnn: HP.excessAmt * T.ann, run: best, runEnd: end };
+    // ---- [절차 7] 종합 — 매출 착시 / 현금 손실 / 회수 가능분(중복 제거)
+    const disp = T.dispCost, dispL12 = sum(R.filter(r => r.disp && L12s.has(r.m)).map(r => r.q * r.cost));
+    const refWin = (T.ret - REV.post) / (T.ship - REV.win || 1);
+    const pushEx = REV.win ? REV.post - REV.win * refWin : 0;
+    let hPost = 0, hWin = 0; for (const e of done) { hWin += e.byPartner[HP.n] || 0; for (const r of R) if (r.p === HP.n && r.s === e.s && e.post.includes(r.m)) hPost += r.q; }
+    const overlap = Math.max(0, Math.min(hPost - hWin * refWin, pushEx, HP.excess));
+    const postUnit = REV.post ? sum(done.map(e => sum(R.filter(r => r.s === e.s && e.post.includes(r.m)).map(r => r.amt)))) / REV.post : 0;
+    const postCost = REV.post ? sum(done.map(e => sum(R.filter(r => r.s === e.s && e.post.includes(r.m)).map(r => r.q * r.cost)))) / REV.post : 0;
+    const replRatio = REV.post ? REV.repl / REV.post : 0;
+    const SYN = { ann: T.ann,
+      illusion: { ann: T.retamtAnn, l12: T.retamt12 },
+      log: { ann: T.log * T.ann, l12: T.ret12 * L }, disp: { ann: disp * T.ann, l12: dispL12, repl: sum(R.filter(r => r.why === REPL).map(r => r.q * r.cost)) * T.ann, pabon: RSN.pabonDisp * T.ann },
+      ero: { ann: SUP.loss, l12: SUP.loss },
+      hEx: { q: HP.excess * T.ann, rev: HP.excess * HP.price * T.ann, cash: HP.excess * (L + HP.d * HP.unitCost) * T.ann },
+      push: { q: pushEx * T.ann, rev: pushEx * postUnit * T.ann, cash: pushEx * (L + replRatio * postCost) * T.ann },
+      ov: { q: overlap * T.ann, rev: overlap * HP.price * T.ann, cash: overlap * (L + replRatio * postCost) * T.ann }, refWin, H: HP.n };
+    SYN.cash = { ann: SYN.log.ann + SYN.disp.ann + SYN.ero.ann, l12: SYN.log.l12 + SYN.disp.l12 + SYN.ero.l12 };
+    SYN.recov = { q: SYN.hEx.q + SYN.push.q - SYN.ov.q, rev: SYN.hEx.rev + SYN.push.rev - SYN.ov.rev, cash: SYN.hEx.cash + SYN.push.cash - SYN.ov.cash };
     // ---- 시리즈 경보(개정판 직전 출고 배수)
     const serAlerts = [];
     for (const e of upcoming) e.pre.forEach((x, i) => { if (x in mi && e.base) { const v = (serMon[e.s] || {})[x] || 0; const r = v / e.base; const lv = r > 1.5 ? 2 : r > 1.0 ? 1 : 0; if (lv) serAlerts.push({ s: e.s, M: e.M, m: x, off: i - 3, v, r, cap: e.caps[i], lv }); } });
-    return { T, mon, months, P: PL.sort((a, b) => b.rev - a.rev), PM: P, REV, lag, fc, bt, CL, clusters, feats, serAlerts, L, asOf };
+    return { T, mon, months, P: PL.sort((a, b) => b.rev - a.rev), PM: P, REV, lag, fc, bt, CL, clusters, feats, serAlerts, L, asOf, INT, RSN, SUP, HI, SYN };
   }
   const api = { build, fitLag, kmeans, ymAdd, ymRange, DISP };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Engine = api;
@@ -428,11 +534,25 @@ $('#kSel').addEventListener('change',e=>{ST.k=+e.target.value;recompute()});
 function render(){
   $$('section.pane').forEach(s=>s.hidden=s.id!=='p-'+ST.tab);
   if(!ST.model){if(ST.tab!=='data'){$('#p-'+ST.tab).hidden=true;showEmpty()}renderData();return}
-  ({sum:rSum,ptn:rPtn,lag:rLag,cl:rCl,pl:rPl,rev:rRev,data:renderData})[ST.tab]();
+  ({sum:rSum,ptn:rPtn,rsn:rRsn,sup:rSup,lag:rLag,cl:rCl,pl:rPl,rev:rRev,data:renderData})[ST.tab]();
 }
 
 // ---------- 요약
-function rSum(){const m=ST.model,T=m.T;const f3=m.fc.reduce((a,f)=>a+f.total,0);
+function rSum(){const m=ST.model,T=m.T;const f3=m.fc.reduce((a,f)=>a+f.total,0);const H=m.HI,Y=m.SYN;
+ const up=m.serAlerts.filter(a=>a.lv===2);
+ $('#headline').innerHTML=`<b>→ 핵심:</b> 지금 가장 급한 것은 <b>${esc(H.n)}의 구조적 고반품</b> — 반품률 ${pct(H.rate)}(자기 제외 평균 ${pct(H.ex)}의 ${H.multEx.toFixed(1)}배), 초과 반품이 연 <b>${eok(H.excessAnn)}원</b>의 매출을 지움.${up.length?` 개정 임박 <b>${esc(up[0].s)}</b>(${up[0].M}) 직전 출고가 상한 초과 — 출간 뒤 반품 대비 필요.`:''}`;
+ $('#synSub').textContent=`연간 = ${T.first}~${m.asOf} 합계 ÷ ${T.months} × 12 · 최근 12개월 병기 · 물류비 ${nf(m.L)}원/부(가정)`;
+ $('#tb-syn').innerHTML=`<tr><th class="l">라벨</th><th class="l">구성</th><th>연간</th><th>최근 12개월</th></tr>
+ <tr><td class="l"><span class="chip ok" style="background:var(--accent-soft);color:var(--accent)">매출 착시</span></td><td class="l">반품으로 지워지는 매출(반품액)</td><td><b>${eok(Y.illusion.ann)}</b></td><td>${eok(Y.illusion.l12)}</td></tr>
+ <tr><td class="l" rowspan="4"><span class="chip c2">현금 손실</span></td><td class="l">왕복 물류비(반품 전량 × ${nf(m.L)}원)</td><td>${eok(Y.log.ann)}</td><td>${eok(Y.log.l12)}</td></tr>
+ <tr><td class="l">폐기 제작원가(개정판교체 ${eok(Y.disp.repl)} + 파본 ${eok(Y.disp.pabon)})</td><td>${eok(Y.disp.ann)}</td><td>${eok(Y.disp.l12)}</td></tr>
+ <tr><td class="l">공급률 침식(하락 거래처 ${m.SUP.dec.length}곳, ⓐ)</td><td>${eok(Y.ero.ann)}</td><td>${eok(Y.ero.l12)}</td></tr>
+ <tr class="sum"><td class="l">현금 손실 소계</td><td>${eok(Y.cash.ann)}</td><td>${eok(Y.cash.l12)}</td></tr>
+ <tr><td class="l" rowspan="4"><span class="chip c1">회수 가능분(조건부)</span></td><td class="l">${esc(Y.H)} 초과 반품 ${nf(Y.hEx.q)}부/년 — 매출 ${eok(Y.hEx.rev)} · 현금 ${eok(Y.hEx.cash)}</td><td></td><td></td></tr>
+ <tr><td class="l">개정판 직전 밀어내기 초과 반품 ${nf(Y.push.q)}부/년 — 매출 ${eok(Y.push.rev)} · 현금 ${eok(Y.push.cash)}</td><td></td><td></td></tr>
+ <tr><td class="l">중복(${esc(Y.H)}의 밀어내기 구간 초과분) −${nf(Y.ov.q)}부 — 매출 −${eok(Y.ov.rev)} · 현금 −${eok(Y.ov.cash)}</td><td></td><td></td></tr>
+ <tr class="sum"><td class="l">중복 제거 후 — 매출 ${eok(Y.recov.rev)} · 현금 ${eok(Y.recov.cash)}</td><td></td><td></td></tr>`;
+ $('#synNote').textContent=`단순 합산(매출 착시 + 현금 손실 = ${eok(Y.illusion.ann+Y.cash.ann)})은 매출 감소분과 비용을 섞은 값 — 손익 영향 그대로가 아님. 회수 가능분은 위 두 라벨의 부분집합. 현금 손실 = 연 출고액 ${eok(T.revAnn)}의 ${pct(Y.cash.ann/T.revAnn)}. 밀어내기 초과 = 구간 반품 − 구간 출고 × 구간 외 반품률 ${pct(Y.refWin,2)}`;
  const tiles=[['누적 반품률',pct(T.rate),`반품 ${nf(T.ret)} / 출고 ${nf(T.ship)}부`],
   ['최근 12개월 반품액',eok(T.retamt12)+'<small>원</small>',`출고액 ${eok(T.rev12)}의 ${pct(T.retamt12/T.rev12)}`],
   ['최근 12개월 현금 손실',eok(T.cash12)+'<small>원</small>',`물류 ${eok(T.ret12*m.L)} · 폐기 ${eok(T.cash12-T.ret12*m.L)}`],
@@ -460,7 +580,7 @@ function rSum(){const m=ST.model,T=m.T;const f3=m.fc.reduce((a,f)=>a+f.total,0);
 // ---------- 거래처 표
 const PCOLS=[['n','거래처',p=>esc(p.n)],['ship','출고부수',p=>nf(p.ship)],['rate','누적 반품률',p=>pct(p.rate)],['rate12','12개월 반품률',p=>pct(p.rate12)],['rev','출고 매출',p=>eok(p.rev,2)],['netrev','실판매 매출',p=>eok(p.netrev,2)],
  ['move','순위 이동',p=>p.move?`<span style="color:var(${p.move>0?'--good':'--crit'});font-weight:700">${p.move>0?'▲':'▼'}${Math.abs(p.move)}</span>`:'—'],['sr','공급률',p=>pct(p.sr,2)],['srChg','반기 공급률 변화',p=>p.srChg==null?'—':p.srChg.toFixed(2)+'%p'],
- ['contrib','공헌이익',p=>eok(p.contrib,2)],['cl','군집',p=>'G'+(p.cl+1)],['sev','경보',p=>p.alerts.map(a=>`<span class="chip c${a.lv}">${({rate:'반품률',rank:'순위',sr:'공급률',pabon:'파본'})[a.k]}</span>`).join('')||'<span class="chip ok">정상</span>']];
+ ['contrib','공헌이익',p=>eok(p.contrib,2)],['cl','분류',p=>'분류 '+(p.cl+1)],['sev','경보',p=>p.alerts.map(a=>`<span class="chip c${a.lv}">${({rate:'반품률',rank:'순위',sr:'공급률',pabon:'파본'})[a.k]}</span>`).join('')||'<span class="chip ok">정상</span>']];
 function rPtn(){const m=ST.model,s=ST.sort;const rows=m.P.slice().sort((a,b)=>{const x=a[s.key],y=b[s.key];if(typeof x==='string')return s.dir*x.localeCompare(y);return s.dir*((x??-1e18)-(y??-1e18))});
  let h='<tr>'+PCOLS.map(c=>`<th class="sort" data-k="${c[0]}">${c[1]}${s.key===c[0]?(s.dir<0?' ↓':' ↑'):''}</th>`).join('')+'</tr>';
  rows.forEach(p=>h+=`<tr class="click" data-n="${esc(p.n)}">`+PCOLS.map(c=>`<td>${c[2](p)}</td>`).join('')+'</tr>');
@@ -478,6 +598,7 @@ function openP(n,btn){const m=ST.model,p=m.PM[n];if(!p)return;lastFocus=btn;$('#
  $('#dbody').innerHTML=`<div>${lv}</div>
  <div class="kv"><div><span>누적 반품률</span><b>${pct(p.rate)}</b><span>자기 제외 평균 ${pct(p.exRate)}</span></div><div><span>초과 반품</span><b>${nf(Math.max(p.excess,0))}부</b><span>매출 ${eok(Math.max(p.excessAmt,0),2)}</span></div><div><span>공헌이익</span><b>${eok(p.contrib,2)}</b><span>공헌이익률 ${pct(p.cm)}</span></div><div><span>손익분기 반품률</span><b>${pct(p.be)}</b><span>여유 ${(p.headroom*100).toFixed(1)}%p</span></div></div>
  <div class="card"><h3>월별 출고·반품</h3><div class="legend"><span><i style="background:var(--s1)"></i>출고</span><span><i style="background:var(--s2)"></i>반품</span></div><div id="c-p1"></div></div>
+ <details><summary class="note" style="cursor:pointer">월별 출고·반품·반품률 표 — 당월 값은 반품 시차로 요동, 판단은 누적</summary><div class="tbl" style="margin-top:6px"><table>${pMonthly(p)}</table></div></details>
  <div class="tbl"><table>
   <tr><th>항목</th><th>값</th><th class="l">설명</th></tr>
   <tr><td>출고 / 반품 / 실판매</td><td>${nf(p.ship)} / ${nf(p.ret)} / ${nf(p.ship-p.ret)}</td><td class="l">${m.T.first}~${m.asOf}</td></tr>
@@ -487,10 +608,14 @@ function openP(n,btn){const m=ST.model,p=m.PM[n];if(!p)return;lastFocus=btn;$('#
   <tr><td>공급률 · 반기 변화</td><td>${pct(p.sr,2)} · ${p.srChg==null?'—':p.srChg.toFixed(2)+'%p'}</td><td class="l">최근 6개월 vs 그 전 6개월</td></tr>
   <tr><td>파본 비중(12개월)</td><td>${pct(p.pabonShare12)}</td><td class="l">전사 누적 ${pct(T.pabonShare)}</td></tr>
   <tr><td>개정판 직전 구간 출고 비중</td><td>${pct(p.winShare)}</td><td class="l">자기 출고 중 개정판 M-3~M-1 구판 출고</td></tr>
-  <tr><td>군집</td><td>G${p.cl+1}</td><td class="l">${esc(cl.tag)}</td></tr>
+  <tr><td>분류</td><td>분류 ${p.cl+1}</td><td class="l">${esc(cl.tag)}</td></tr>
+  <tr><td>반품률 비교</td><td>${(p.rate/p.exRate).toFixed(2)}배 · ${(p.rate/T.rate).toFixed(2)}배</td><td class="l">자기 제외 평균 ${pct(p.exRate,2)} 대비 · 자기 포함 전사 ${pct(T.rate,2)} 대비</td></tr>
+  <tr><td>초과 반품 연환산</td><td>${eok(Math.max(p.excessAmt,0)*T.ann,2)}</td><td class="l">초과 반품 × 평균 공급단가 ÷ ${T.months} × 12</td></tr>
  </table></div>`;
  $('#scrim').hidden=false;$('#drawer').hidden=false;document.body.style.overflow='hidden';
  requestAnimationFrame(()=>{drawP(p);$('#dclose').focus()});}
+function pMonthly(p){const m=ST.model;let cs=0,cr=0,h='<tr><th>월</th><th>출고</th><th>반품</th><th>당월 반품률</th><th>누적 반품률</th><th>나머지 거래처 당월</th></tr>';
+ m.months.forEach((mm,i)=>{const [sh,rt]=p.mon[i];cs+=sh;cr+=rt;const os=m.mon[i].ship-sh,or=m.mon[i].ret-rt;h+=`<tr><td>${mm}</td><td>${nf(sh)}</td><td>${nf(rt)}</td><td>${sh?pct(rt/sh):'—'}</td><td>${cs?pct(cr/cs):'—'}</td><td>${os?pct(or/os):'—'}</td></tr>`});return h}
 function drawP(p){const m=ST.model;const host=$('#c-p1');const f=frame(host,220,48,40);const mon=p.mon;const max=nice(Math.max(...mon.map(x=>x[0]),1));yAxis(f,max,4,fq);const bw=f.iw/mon.length;
  let cs=0,cr=0;const cum=mon.map(x=>{cs+=x[0];cr+=x[1];return cs?cr/cs:0});
  mon.forEach((x,i)=>{const X=f.ml+i*bw;const w=Math.max((bw-4)/2,1);[[x[0],'--s1',0],[x[1],'--s2',1]].forEach(([v,c,k])=>{const hh=v/max*f.ih;if(hh>0)el('rect',{x:X+2+k*w,y:f.mt+f.ih-hh,width:w,height:hh,fill:css(c)},f.svg)});
@@ -499,6 +624,26 @@ function drawP(p){const m=ST.model;const host=$('#c-p1');const f=frame(host,220,
 function closeD(){$('#scrim').hidden=true;$('#drawer').hidden=true;document.body.style.overflow='';tip.hidden=true;if(lastFocus&&lastFocus.focus)lastFocus.focus()}
 $('#dclose').addEventListener('click',closeD);$('#scrim').addEventListener('click',closeD);addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#drawer').hidden)closeD()});
 
+// ---------- 반품사유
+function rRsn(){const m=ST.model,Z=m.RSN,T=m.T;const top=Z.brands[0];
+ $('#rsnJudge').innerHTML=`<b>→ 판단:</b> 파본 ${nf(Z.pabonQ)}부 중 <b>${esc(top.b)}</b> 계열이 ${pct(top.rs)} — 출고 점유율 ${pct(top.ss)} 대비 <b>집중도 ${top.conc.toFixed(2)}배</b>. 파본 폐기 제작원가 ${eok(Z.pabonDisp,2)}(연 ${eok(Z.pabonDisp*T.ann,2)})`;
+ $('#tb-rsn').innerHTML='<tr><th>반품사유</th><th>부수</th><th>비중</th><th>반품액</th><th class="l">처리</th></tr>'+Z.rows.map(x=>`<tr><td>${esc(x.k)}</td><td>${nf(x.q)}</td><td>${pct(x.sh)}</td><td>${eok(x.amt,2)}</td><td class="l">${Engine.DISP.has(x.k)?'재판매 불가':'재판매 가능'}</td></tr>`).join('')+`<tr class="sum"><td>합계</td><td>${nf(T.ret)}</td><td>100.0%</td><td>${eok(T.retamt,2)}</td><td></td></tr>`;
+ {const B=Z.brands;const host=$('#c-pb');const H=Math.max(180,B.length*30+28);const f=frame(host,H,70,60,4,20);const max=nice(Math.max(...B.map(b=>Math.max(b.rs,b.ss))));const bh=f.ih/B.length;
+  for(let i=0;i<=4;i++){const v=max*i/4,x=f.ml+v/max*f.iw;el('line',{x1:x,x2:x,y1:f.mt,y2:f.mt+f.ih,stroke:css('--rule')},f.svg);const t=el('text',{x,y:f.h-5,'text-anchor':'middle','font-size':10.5,fill:css('--ink-3')},f.svg);t.textContent=Math.round(v*100)+'%'}
+  B.forEach((b,i)=>{const y=f.mt+i*bh;const g=(bh-8)/2;el('rect',{x:f.ml,y:y+3,width:b.rs/max*f.iw,height:g,rx:2,fill:css('--s2')},f.svg);el('rect',{x:f.ml,y:y+5+g,width:b.ss/max*f.iw,height:g,rx:2,fill:css('--gray')},f.svg);
+   const t=el('text',{x:f.ml-6,y:y+bh/2+4,'text-anchor':'end','font-size':11.5,fill:css('--ink')},f.svg);t.textContent=b.b;
+   const v=el('text',{x:f.ml+Math.max(b.rs,b.ss)/max*f.iw+4,y:y+bh/2+4,'font-size':11,fill:css('--ink-2'),'font-weight':b.conc>1?700:400},f.svg);v.textContent=b.conc.toFixed(2)+'배';
+   const r=el('rect',{x:0,y,width:f.W,height:bh,fill:'transparent'},f.svg);hit(r,`${b.b}\n파본 ${nf(b.pabon)}부(점유율 ${pct(b.rs)})\n출고 점유율 ${pct(b.ss)} · 집중도 ${b.conc.toFixed(2)}배\n자기 반품 중 파본 ${pct(b.inShare)} · 폐기원가 ${eok(b.disp,2)}`)})}
+ $('#tb-pbs').innerHTML='<tr><th>시리즈(파본 비중 순)</th><th>파본</th><th>총 반품</th><th>파본 비중</th></tr>'+Z.series.slice(0,12).map(x=>`<tr><td>${esc(x.s)}</td><td>${nf(x.pabon)}</td><td>${nf(x.ret)}</td><td>${pct(x.sh)}</td></tr>`).join('');
+}
+// ---------- 공급률
+function rSup(){const m=ST.model,U=m.SUP;if(!U.y0){$('#supJudge').innerHTML='<b>→ 판단:</b> 연도 비교에는 6개월 이상인 연도가 2개 필요';$('#tb-sup').innerHTML='';return}
+ const dec=U.rows.filter(r=>r.dec),flat=U.rows.filter(r=>r.d!=null&&Math.abs(r.d)<=0.1);
+ $('#supJudge').innerHTML=`<b>→ 판단:</b> ${U.y0}→${U.y1} 하락 ${dec.length}곳(${dec.map(r=>esc(r.n)+' '+r.d.toFixed(2)+'%p').join(', ')||'없음'}) · 침식액 ⓐ 연 ${eok(U.loss,2)} / ⓑ ${eok(U.lossB,2)}(본문 수치 ⓐ) · 변동 없음(±0.1%p 이내) ${flat.length}곳`;
+ let h=`<tr><th>거래처</th><th>${U.y0}</th><th>${U.y1}</th><th>ⓐ 연도 평균 차</th><th>첫·끝 달 차</th><th>ⓑ 연율화</th><th>최근 12개월 정가 출고액</th><th>침식액 ⓐ</th><th>침식액 ⓑ</th><th class="l">판정</th></tr>`;
+ U.rows.forEach(r=>h+=`<tr class="click" data-n="${esc(r.n)}"${r.dec?' style="background:var(--crit-soft)"':''}><td>${esc(r.n)}</td><td>${pct(r.y0,2)}</td><td>${pct(r.y1,2)}</td><td><b style="color:var(${r.dec?'--crit':'--ink'})">${r.d==null?'—':r.d.toFixed(2)+'%p'}</b></td><td>${r.fl==null?'—':r.fl.toFixed(2)+'%p'}</td><td>${r.flAnn==null?'—':r.flAnn.toFixed(2)+'%p'}</td><td>${eok(r.lst12,2)}</td><td>${r.dec?eok(r.lossA,2):'—'}</td><td>${r.dec?eok(r.lossB,2):'—'}</td><td class="l">${r.dec?'하락':r.d!=null&&Math.abs(r.d)<=0.1?'변동 없음':'소폭 변동'}</td></tr>`);
+ h+=`<tr class="sum"><td>하락 ${dec.length}곳 합계</td><td></td><td></td><td></td><td></td><td></td><td>${eok(dec.reduce((a,r)=>a+r.lst12,0),2)}</td><td>${eok(U.loss,2)}</td><td>${eok(U.lossB,2)}</td><td></td></tr>`;
+ $('#tb-sup').innerHTML=h;$$('#tb-sup tr.click').forEach(r=>r.addEventListener('click',()=>openP(r.dataset.n,r)));}
 // ---------- 시차·예측
 function rLag(){const m=ST.model,lag=m.lag;const top=lag.p.map((v,k)=>({v,k})).sort((a,b)=>b.v-a.v).slice(0,3).map(x=>x.k).sort((a,b)=>a-b);
  const c80=lag.cum.findIndex(c=>c>=0.8*lag.total);
@@ -527,7 +672,7 @@ function rLag(){const m=ST.model,lag=m.lag;const top=lag.p.map((v,k)=>({v,k})).s
 // ---------- 군집
 const CLC=['--s2','--s1','--s3','--s4'];
 function rCl(){const m=ST.model;$('#kSel').value=ST.k;
- $('#lg-cl').innerHTML=m.clusters.map(c=>`<span><i style="background:var(${CLC[c.j]})"></i>G${c.j+1}</span>`).join('');
+ $('#lg-cl').innerHTML=m.clusters.map(c=>`<span><i style="background:var(${CLC[c.j]})"></i>분류 ${c.j+1}</span>`).join('');
  const host=$('#c-cl');const f=frame(host,300,52,20,14,34);const xs=m.CL.map(c=>c.rate),ys=m.CL.map(c=>c.sr);
  const x0=0,x1=nice(Math.max(...xs)*1.1),y0=Math.floor(Math.min(...ys)*100-1)/100,y1=Math.ceil(Math.max(...ys)*100+1)/100;
  const X=v=>f.ml+(v-x0)/(x1-x0)*f.iw,Y=v=>f.mt+f.ih-(v-y0)/(y1-y0)*f.ih;
@@ -537,15 +682,15 @@ function rCl(){const m=ST.model;$('#kSel').value=ST.k;
  const ty=el('text',{x:f.ml+4,y:f.mt+10,'font-size':11,fill:css('--ink-3')},f.svg);ty.textContent='↑ 공급률';
  const smax=Math.max(...m.CL.map(c=>m.PM[c.n].ship));const placed=[];
  m.CL.slice().sort((a,b)=>m.PM[b.n].ship-m.PM[a.n].ship).forEach(c=>{const p=m.PM[c.n];const r=5+14*Math.sqrt(p.ship/smax);const ci=el('circle',{cx:X(c.rate),cy:Y(c.sr),r,fill:css(CLC[c.cl]),'fill-opacity':0.8,stroke:css('--surface'),'stroke-width':2},f.svg);
-  hit(ci,`${c.n} · G${c.cl+1}\n반품률 ${pct(c.rate)} · 공급률 ${pct(c.sr,2)}\n출고 ${nf(p.ship)}부\n개정판 직전 물량 ${pct(c.winShare)} · 파본 ${pct(c.pabonShare)}`);ci.style.cursor='pointer';ci.addEventListener('click',()=>openP(c.n,null));
+  hit(ci,`${c.n} · 분류 ${c.cl+1}\n반품률 ${pct(c.rate)} · 공급률 ${pct(c.sr,2)}\n출고 ${nf(p.ship)}부\n개정판 직전 물량 ${pct(c.winShare)} · 파본 ${pct(c.pabonShare)}`);ci.style.cursor='pointer';ci.addEventListener('click',()=>openP(c.n,null));
   const lx=X(c.rate)+r+3,ly=Y(c.sr)+4,lw=c.n.length*11+4;if(!placed.some(b=>lx<b[0]+b[2]&&lx+lw>b[0]&&Math.abs(ly-b[1])<13)&&lx+lw<f.W){placed.push([lx,ly,lw]);const t=el('text',{x:lx,y:ly,'font-size':11,fill:css('--ink-2')},f.svg);t.textContent=c.n}});
  const POL=c=>{const z=c.z;const a=[];if(z[0]>0.5)a.push('반품률 상한·물류비 분담 협의');if(z[3]>0.8)a.push('개정판 직전 출고 상한 우선 적용');if(z[1]<-0.5&&z[0]<=0.5)a.push('실판매 기준 성과 관리 유지');if(z[1]>0.5)a.push('공급률 추이 반기 점검');if(z[4]>0.8)a.push('파본 전표·검품 대조');if(!a.length)a.push('월별 체크리스트 기본 점검');return a.join(' · ')};
- $('#clCards').innerHTML=m.clusters.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><h3><span class="chip" style="background:var(${CLC[c.j]});color:#fff">G${c.j+1}</span> ${esc(c.tag)}</h3><span class="note" style="margin:0">${c.members.length}곳</span></div>
+ $('#clCards').innerHTML=m.clusters.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><h3><span class="chip" style="background:var(${CLC[c.j]});color:#fff">분류 ${c.j+1}</span> ${esc(c.tag)}</h3><span class="note" style="margin:0">${c.members.length}곳</span></div>
   <p class="sub" style="margin-top:4px">${c.members.map(esc).join(', ')}</p>
   <p style="margin:6px 0 0;font-size:13px">반품률 ${pct(c.raw.rate)} · 공급률 ${pct(c.raw.sr,1)} · 개정판 직전 물량 ${pct(c.raw.winShare)} · 파본 ${pct(c.raw.pabonShare)} · 공헌이익 ${eok(c.contrib)}</p>
   <p style="margin:4px 0 0;font-size:13px"><b>관리 방향</b> ${POL(c)}</p></div>`).join('');
- let h='<tr><th>거래처</th><th>군집</th><th>누적 반품률</th><th>공급률</th><th>출고부수</th><th>개정판 직전 물량 비중</th><th>파본 비중</th></tr>';
- m.CL.slice().sort((a,b)=>a.cl-b.cl||b.rate-a.rate).forEach(c=>h+=`<tr class="click" data-n="${esc(c.n)}"><td>${esc(c.n)}</td><td>G${c.cl+1}</td><td>${pct(c.rate)}</td><td>${pct(c.sr,2)}</td><td>${nf(m.PM[c.n].ship)}</td><td>${pct(c.winShare)}</td><td>${pct(c.pabonShare)}</td></tr>`);
+ let h='<tr><th>거래처</th><th>분류</th><th>누적 반품률</th><th>공급률</th><th>출고부수</th><th>개정판 직전 물량 비중</th><th>파본 비중</th></tr>';
+ m.CL.slice().sort((a,b)=>a.cl-b.cl||b.rate-a.rate).forEach(c=>h+=`<tr class="click" data-n="${esc(c.n)}"><td>${esc(c.n)}</td><td>분류 ${c.cl+1}</td><td>${pct(c.rate)}</td><td>${pct(c.sr,2)}</td><td>${nf(m.PM[c.n].ship)}</td><td>${pct(c.winShare)}</td><td>${pct(c.pabonShare)}</td></tr>`);
  $('#tb-cl').innerHTML=h;$$('#tb-cl tr.click').forEach(r=>r.addEventListener('click',()=>openP(r.dataset.n,r)));
 }
 
@@ -587,7 +732,10 @@ function rRev(){const m=ST.model,R=m.REV;
  let h='<tr><th>시리즈</th><th>개정월</th><th>M-3</th><th>M-2</th><th>M-1</th><th>3개월 합</th><th>평상시 배수</th><th>M+1~M+3 반품</th><th>구간 반품률</th><th>개정판교체</th><th>폐기원가</th></tr>';
  R.events.forEach(e=>h+=`<tr><td>${esc(e.s)}</td><td>${e.M}</td>${e.q.map(x=>`<td>${nf(x)}</td>`).join('')}<td>${nf(e.win)}</td><td>${e.mult.toFixed(2)}</td><td>${nf(e.postRet)}${e.postObs<3?` (${e.postObs}개월)`:''}</td><td>${pct(e.postRet/e.win)}</td><td>${nf(e.repl)}</td><td>${eok(e.repl*e.cost,2)}</td></tr>`);
  if(R.n)h+=`<tr class="sum"><td>합계(관측 완료 ${R.n}종)</td><td></td><td></td><td></td><td></td><td>${nf(R.win)}</td><td>${R.mult.toFixed(2)}</td><td>${nf(R.post)}</td><td>${pct(R.rate)}</td><td>${nf(R.repl)}</td><td></td></tr>`;
- $('#tb-ev').innerHTML=h;}
+ $('#tb-ev').innerHTML=h;
+ $('#evNote').textContent=`평상시 배수 = (3개월 합 ÷ 3) ÷ 평상시 월평균. 표 값은 출고 발생 월 평균(ⓑ) 기준, 무출고 월 포함 전체 평균(ⓐ) 기준 합산 배수 ${R.multAll?R.multAll.toFixed(2):'—'}배. 제외 ${R.excluded.length}종: ${R.excluded.map(x=>`${x.s}(${x.M}, ${x.why})`).join(', ')||'없음'}`;
+ $('#tb-evp').innerHTML='<tr><th>거래처</th><th>구간 출고</th><th>비중</th><th>평상시 비중</th></tr>'+R.winPartnerRows.map(x=>`<tr><td>${esc(x.p)}</td><td>${nf(x.q)}</td><td>${pct(x.sh)}</td><td>${pct(x.normal)}</td></tr>`).join('')+`<tr class="sum"><td>합계</td><td>${nf(R.win)}</td><td>100.0%</td><td></td></tr>`;
+ $('#tb-evr').innerHTML='<tr><th>사유(M+1~M+3)</th><th>부수</th><th>비중</th></tr>'+R.postReasons.map(x=>`<tr><td>${esc(x.k)}</td><td>${nf(x.q)}</td><td>${pct(x.sh)}</td></tr>`).join('')+`<tr class="sum"><td>합계</td><td>${nf(R.post)}</td><td>100.0%</td></tr><tr><td>폐기 제작원가</td><td colspan="2">${eok(R.dispCost,2)} (연 ${eok(R.dispCost*m.T.ann,2)})</td></tr>`;}
 
 // ---------- 데이터 등록
 function parseCSV(text){text=text.replace(/^﻿/,'');const rows=[];let row=[],cell='',q=false;
@@ -631,6 +779,14 @@ function renderData(){const ms=Object.keys(ST.months).sort();
  $('#regMonths').innerHTML=ms.length?ms.map(m=>`<span title="출고 ${(ST.months[m].ship||[]).length}행 · 반품 ${(ST.months[m].ret||[]).length}행">${m}</span>`).join(''):'<span class="note" style="background:none">없음</span>';
  $('#regNote').textContent=ms.length?`${ms.length}개월 등록 · 도서마스터 ${ST.master?ST.master.length+'종':'미등록'}`:'';
  $('#pLog').value=ST.params.logistics||1400;
+ const I=ST.model&&ST.model.INT;$('#tb-int').innerHTML=I?`<tr><th class="l">점검 항목</th><th class="l">결과</th></tr>
+ <tr><td class="l">기간·규모</td><td class="l">${I.first}~${I.asOf}(${I.months}개월) · 거래처 ${I.partners}곳 · 출고 시리즈 ${I.shipSeries}종 · 반품 시리즈 ${I.retSeries}종</td></tr>
+ <tr><td class="l">반품 (거래처, 시리즈) ⊂ 출고</td><td class="l">${I.retPairs}개 조합 중 출고 이력 없음 ${I.orphanPairs}개${I.orphanQ?` · ${nf(I.orphanQ)}부(거래처 평균 단가로 환산)`:''}</td></tr>
+ <tr><td class="l">시리즈명 ⊂ 도서마스터</td><td class="l">${I.notInMaster.length?'없음 '+I.notInMaster.length+'종: '+I.notInMaster.slice(0,5).map(esc).join(', '):'전부 존재'}</td></tr>
+ <tr><td class="l">출고 이력 없는 마스터 시리즈</td><td class="l">${I.noShipMaster.length}종${I.noShipMaster.length?' — '+I.noShipMaster.slice(0,5).map(esc).join(', '):''}</td></tr>
+ <tr><td class="l">누적 반품 > 누적 출고 조합</td><td class="l">${I.overPairs}건</td></tr>
+ <tr><td class="l">반품 시차</td><td class="l">첫 반품 ${I.firstRet||'—'} · 조합별 첫 출고→첫 반품 최소 ${I.lagMin??'—'} / 중앙값 ${I.lagMed??'—'} / 평균 ${I.lagMean==null?'—':I.lagMean.toFixed(1)} / 최대 ${I.lagMax??'—'}개월</td></tr>
+ <tr><td class="l">연도별 반품률(참고)</td><td class="l">${ST.model.T.byYear.map(y=>`${y.y}${y.n<12?`(${y.n}개월)`:''} ${pct(y.ret/y.ship)}`).join(' · ')} — 반품 시차로 앞 기간 과소, 판단은 누적 기준</td></tr>`:'<tr><td class="l">데이터 등록 후 표시</td></tr>';
  const ro=ST.canWrite===false||!ST.db;['#fShip','#fRet','#fMas','#bCheck','#pLog','#bParam'].forEach(i=>$(i).disabled=ro);if(ro)$('#bSave').disabled=true;
  const rn=$('#roNote');if(!ro&&rn)rn.remove();
  if(ro&&!$('#roNote')){const n=document.createElement('div');n.id='roNote';n.className='msg info';n.textContent=ST.db?'보기 권한입니다 — 데이터 등록은 편집 권한이 있는 담당자만 할 수 있습니다.':'저장소에 연결되지 않아 등록할 수 없습니다.';$('#upForm').prepend(n)}

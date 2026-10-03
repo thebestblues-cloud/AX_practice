@@ -161,10 +161,88 @@
     // 반품률 높은 군집 순으로 번호 재부여
     const order = clusters.slice().sort((a, b) => b.raw.rate - a.raw.rate).map(c => c.j); const remap = Object.fromEntries(order.map((j, i) => [j, i]));
     clusters.forEach(c => c.j = remap[c.j]); clusters.sort((a, b) => a.j - b.j); CL.forEach(c => { c.cl = remap[c.cl]; P[c.n].cl = c.cl; });
+
+    // ---- [절차 1] 데이터 정합
+    const shipSer = new Set(S.map(r => r.s)), pairShip = {}, pairRet = {}, firstS = {}, firstR = {};
+    for (const r of S) { const k = r.p + '|' + r.s; pairShip[k] = (pairShip[k] || 0) + r.q; if (!firstS[k] || r.m < firstS[k]) firstS[k] = r.m; }
+    for (const r of R) { const k = r.p + '|' + r.s; pairRet[k] = (pairRet[k] || 0) + r.q; if (!firstR[k] || r.m < firstR[k]) firstR[k] = r.m; }
+    const mnum = m => +m.slice(0, 4) * 12 + +m.slice(5, 7);
+    const lags = Object.keys(firstR).filter(k => firstS[k]).map(k => mnum(firstR[k]) - mnum(firstS[k])).sort((a, b) => a - b);
+    const INT = { months: NM, first, asOf, partners: PL.length, shipSeries: shipSer.size, retSeries: new Set(R.map(r => r.s)).size,
+      retPartners: new Set(R.map(r => r.p)).size, retPairs: Object.keys(pairRet).length, shipPairs: Object.keys(pairShip).length,
+      orphanPairs: Object.keys(pairRet).filter(k => !pairShip[k]).length, orphanQ: fallback,
+      notInMaster: [...new Set(S.map(r => r.s).concat(R.map(r => r.s)))].filter(x => !M[x]),
+      noShipMaster: Object.keys(M).filter(x => !shipSer.has(x)),
+      overPairs: Object.keys(pairRet).filter(k => pairRet[k] > (pairShip[k] || 0)).length,
+      firstRet: R.length ? R.map(r => r.m).sort()[0] : null,
+      lagMin: lags[0], lagMed: lags.length ? lags[Math.floor((lags.length - 1) / 2)] * 0.5 + lags[Math.ceil((lags.length - 1) / 2)] * 0.5 : null, lagMean: lags.length ? sum(lags) / lags.length : null, lagMax: lags[lags.length - 1] };
+    // ---- [절차 2] 연환산 두 기준
+    T.ann = 12 / NM; T.retamtAnn = T.retamt * T.ann; T.revAnn = T.rev * T.ann;
+    const years = [...new Set(months.map(m => m.slice(0, 4)))];
+    T.byYear = years.map(y => ({ y, ship: sum(S.filter(r => r.m.startsWith(y)).map(r => r.q)), ret: sum(R.filter(r => r.m.startsWith(y)).map(r => r.q)), n: months.filter(m => m.startsWith(y)).length }));
+    // ---- [절차 6] 반품사유
+    const RS = Object.entries(reasons).map(([k, q]) => ({ k, q, sh: q / T.ret, amt: sum(R.filter(r => r.why === k).map(r => r.amt)) })).sort((a, b) => b.q - a.q);
+    const brand = x => x.split(' ')[0];
+    const bS = {}, bR = {}, bP = {}, bPd = {}, sR = {}, sP = {};
+    for (const r of S) add(bS, brand(r.s), r.q);
+    for (const r of R) { add(bR, brand(r.s), r.q); add(sR, r.s, r.q); if (r.why === PABON) { add(bP, brand(r.s), r.q); add(bPd, brand(r.s), r.q * r.cost); add(sP, r.s, r.q); } }
+    const pT = sum(Object.values(bP)), sT = sum(Object.values(bS));
+    const RSN = { rows: RS, pabonQ: pT, pabonDisp: sum(Object.values(bPd)),
+      brands: Object.keys(bS).map(b => ({ b, ship: bS[b], ret: bR[b] || 0, pabon: bP[b] || 0, disp: bPd[b] || 0, rs: (bP[b] || 0) / (pT || 1), ss: bS[b] / sT, inShare: (bP[b] || 0) / (bR[b] || 1) })).map(x => ({ ...x, conc: x.ss ? x.rs / x.ss : 0 })).sort((a, b) => b.conc - a.conc),
+      series: Object.keys(sP).map(x => ({ s: x, pabon: sP[x], ret: sR[x], sh: sP[x] / sR[x] })).sort((a, b) => b.sh - a.sh) };
+    // ---- [절차 5] 공급률 연도 비교·침식액
+    const yA = years.filter(y => months.filter(m => m.startsWith(y)).length >= 6);
+    const SUP = { years: yA, rows: [], loss: 0, lossB: 0, dec: [] };
+    if (yA.length >= 2) { const y0 = yA[yA.length - 2], y1 = yA[yA.length - 1];
+      for (const p of PL) { const a0 = sum(S.filter(r => r.p === p.n && r.m.startsWith(y0)).map(r => r.amt)), l0 = sum(S.filter(r => r.p === p.n && r.m.startsWith(y0)).map(r => r.list));
+        const a1 = sum(S.filter(r => r.p === p.n && r.m.startsWith(y1)).map(r => r.amt)), l1 = sum(S.filter(r => r.p === p.n && r.m.startsWith(y1)).map(r => r.list));
+        const pm = months.map(m => { const a = sum(S.filter(r => r.p === p.n && r.m === m).map(r => r.amt)), l = sum(S.filter(r => r.p === p.n && r.m === m).map(r => r.list)); return l ? { m, v: a / l } : null; }).filter(Boolean);
+        const lst12 = sum(S.filter(r => r.p === p.n && L12s.has(r.m)).map(r => r.list));
+        const row = { n: p.n, y0: l0 ? a0 / l0 : null, y1: l1 ? a1 / l1 : null, lst12 };
+        row.d = row.y0 != null && row.y1 != null ? (row.y1 - row.y0) * 100 : null;
+        if (pm.length > 1) { row.fl = (pm[pm.length - 1].v - pm[0].v) * 100; row.flAnn = row.fl / (mnum(pm[pm.length - 1].m) - mnum(pm[0].m)) * 12; }
+        row.dec = row.d != null && row.d <= -1.0; if (row.dec) { row.lossA = lst12 * -row.d / 100; row.lossB = lst12 * Math.max(-row.flAnn, 0) / 100; SUP.loss += row.lossA; SUP.lossB += row.lossB; SUP.dec.push(p.n); }
+        p.srY = row; SUP.rows.push(row); }
+      SUP.y0 = y0; SUP.y1 = y1; SUP.rows.sort((a, b) => (a.d ?? 0) - (b.d ?? 0)); }
+    // ---- [절차 4] 개정판 보강: 제외 시리즈·구간 사유·평상시 ⓐ·거래처 평상시 비중
+    REV.excluded = Object.entries(M).filter(([s, m]) => /^\d{4}-\d{2}$/.test(m.rev || '') && !(m.rev >= first && m.rev <= asOf)).map(([s, m]) => ({ s, M: m.rev, why: m.rev < first ? '데이터 기간 이전' : '데이터 기간 이후' }));
+    const pr6 = {}; for (const e of done) for (const r of R) if (r.s === e.s && e.post.includes(r.m)) add(pr6, r.why, r.q);
+    REV.postReasons = Object.entries(pr6).map(([k, q]) => ({ k, q, sh: q / (REV.post || 1) })).sort((a, b) => b.q - a.q);
+    REV.dispCost = sum(done.map(e => e.repl * e.cost));
+    for (const e of events) { const sm = serMon[e.s] || {}; e.baseAll = sum(months.filter(x => !e.pre.includes(x)).map(x => sm[x] || 0)) / Math.max(months.length - 3, 1); e.multAll = e.baseAll ? e.win / 3 / e.baseAll : null; }
+    REV.multAll = sum(done.map(e => e.baseAll * 3)) ? REV.win / sum(done.map(e => e.baseAll * 3)) : null;
+    const outP = {}; for (const e of done) for (const r of S) if (r.s === e.s && !e.pre.includes(r.m)) add(outP, r.p, r.q);
+    const outT = sum(Object.values(outP));
+    REV.winPartnerRows = REV.winPartner.map(([p, q]) => ({ p, q, sh: q / (REV.win || 1), normal: (outP[p] || 0) / (outT || 1) }));
+    // ---- [절차 3] 최고 반품률 거래처
+    const HP = PL.filter(p => p.ship > 0).sort((a, b) => b.rate - a.rate)[0];
+    let run = 0, best = 0, end = null;
+    HP.monthly = months.map((m, i) => { const sh = HP.mon[i][0], rt = HP.mon[i][1]; const os = mon[i].ship - sh, or = mon[i].ret - rt; return { m, ship: sh, ret: rt, rate: sh ? rt / sh : null, oth: os ? or / os : null }; });
+    let cs = 0, cr = 0; HP.monthly.forEach(x => { cs += x.ship; cr += x.ret; x.cum = cs ? cr / cs : null; const f = x.rate != null && x.oth != null && x.rate > x.oth; run = f ? run + 1 : 0; if (run > best) { best = run; end = x.m; } });
+    const HI = { n: HP.n, rate: HP.rate, ex: HP.exRate, inc: T.rate, multEx: HP.rate / HP.exRate, multInc: HP.rate / T.rate, simpleEx: sum(PL.filter(p => p !== HP && p.ship).map(p => p.rate)) / (PL.filter(p => p !== HP && p.ship).length || 1),
+      excess: HP.excess, excessAmt: HP.excessAmt, excessAnn: HP.excessAmt * T.ann, run: best, runEnd: end };
+    // ---- [절차 7] 종합 — 매출 착시 / 현금 손실 / 회수 가능분(중복 제거)
+    const disp = T.dispCost, dispL12 = sum(R.filter(r => r.disp && L12s.has(r.m)).map(r => r.q * r.cost));
+    const refWin = (T.ret - REV.post) / (T.ship - REV.win || 1);
+    const pushEx = REV.win ? REV.post - REV.win * refWin : 0;
+    let hPost = 0, hWin = 0; for (const e of done) { hWin += e.byPartner[HP.n] || 0; for (const r of R) if (r.p === HP.n && r.s === e.s && e.post.includes(r.m)) hPost += r.q; }
+    const overlap = Math.max(0, Math.min(hPost - hWin * refWin, pushEx, HP.excess));
+    const postUnit = REV.post ? sum(done.map(e => sum(R.filter(r => r.s === e.s && e.post.includes(r.m)).map(r => r.amt)))) / REV.post : 0;
+    const postCost = REV.post ? sum(done.map(e => sum(R.filter(r => r.s === e.s && e.post.includes(r.m)).map(r => r.q * r.cost)))) / REV.post : 0;
+    const replRatio = REV.post ? REV.repl / REV.post : 0;
+    const SYN = { ann: T.ann,
+      illusion: { ann: T.retamtAnn, l12: T.retamt12 },
+      log: { ann: T.log * T.ann, l12: T.ret12 * L }, disp: { ann: disp * T.ann, l12: dispL12, repl: sum(R.filter(r => r.why === REPL).map(r => r.q * r.cost)) * T.ann, pabon: RSN.pabonDisp * T.ann },
+      ero: { ann: SUP.loss, l12: SUP.loss },
+      hEx: { q: HP.excess * T.ann, rev: HP.excess * HP.price * T.ann, cash: HP.excess * (L + HP.d * HP.unitCost) * T.ann },
+      push: { q: pushEx * T.ann, rev: pushEx * postUnit * T.ann, cash: pushEx * (L + replRatio * postCost) * T.ann },
+      ov: { q: overlap * T.ann, rev: overlap * HP.price * T.ann, cash: overlap * (L + replRatio * postCost) * T.ann }, refWin, H: HP.n };
+    SYN.cash = { ann: SYN.log.ann + SYN.disp.ann + SYN.ero.ann, l12: SYN.log.l12 + SYN.disp.l12 + SYN.ero.l12 };
+    SYN.recov = { q: SYN.hEx.q + SYN.push.q - SYN.ov.q, rev: SYN.hEx.rev + SYN.push.rev - SYN.ov.rev, cash: SYN.hEx.cash + SYN.push.cash - SYN.ov.cash };
     // ---- 시리즈 경보(개정판 직전 출고 배수)
     const serAlerts = [];
     for (const e of upcoming) e.pre.forEach((x, i) => { if (x in mi && e.base) { const v = (serMon[e.s] || {})[x] || 0; const r = v / e.base; const lv = r > 1.5 ? 2 : r > 1.0 ? 1 : 0; if (lv) serAlerts.push({ s: e.s, M: e.M, m: x, off: i - 3, v, r, cap: e.caps[i], lv }); } });
-    return { T, mon, months, P: PL.sort((a, b) => b.rev - a.rev), PM: P, REV, lag, fc, bt, CL, clusters, feats, serAlerts, L, asOf };
+    return { T, mon, months, P: PL.sort((a, b) => b.rev - a.rev), PM: P, REV, lag, fc, bt, CL, clusters, feats, serAlerts, L, asOf, INT, RSN, SUP, HI, SYN };
   }
   const api = { build, fitLag, kmeans, ymAdd, ymRange, DISP };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.Engine = api;

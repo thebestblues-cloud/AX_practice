@@ -1,0 +1,10 @@
+const E=require('./engine.js');const seed=require('./seed.json');const m=E.build(Object.values(seed.months),seed.master,{logistics:1400});
+const r=(x,d=2)=>Math.round(x*10**d)/10**d, e=x=>r(x/1e8);
+console.log('INT',JSON.stringify(m.INT));
+console.log('T ann',e(m.T.retamtAnn),e(m.T.retamt12),JSON.stringify(m.T.byYear));
+console.log('RSN',JSON.stringify(m.RSN.rows.map(x=>[x.k,x.q,r(x.sh,3)])),'pabon disp',e(m.RSN.pabonDisp),JSON.stringify(m.RSN.brands.map(b=>[b.b,r(b.conc),r(b.rs,3)])));
+console.log('SUP',m.SUP.y0,m.SUP.y1,m.SUP.dec,e(m.SUP.loss),e(m.SUP.lossB),JSON.stringify(m.SUP.rows.slice(0,4).map(x=>[x.n,r(x.d),r(x.flAnn)])));
+console.log('REV',JSON.stringify(m.REV.excluded),JSON.stringify(m.REV.postReasons.map(x=>[x.k,x.q,r(x.sh,3)])),e(m.REV.dispCost),r(m.REV.multAll),JSON.stringify(m.REV.winPartnerRows.slice(0,3).map(x=>[x.p,r(x.sh,3),r(x.normal,3)])));
+console.log('HI',JSON.stringify(m.HI));
+const S=m.SYN;console.log('SYN illusion',e(S.illusion.ann),e(S.illusion.l12),'log',e(S.log.ann),e(S.log.l12),'disp',e(S.disp.ann),e(S.disp.l12),'ero',e(S.ero.ann),'cash',e(S.cash.ann),e(S.cash.l12));
+console.log('recov',r(S.hEx.q),e(S.hEx.rev),e(S.hEx.cash),'|',r(S.push.q),e(S.push.rev),e(S.push.cash),'|',r(S.ov.q),e(S.ov.rev),e(S.ov.cash),'| total',r(S.recov.q),e(S.recov.rev),e(S.recov.cash));
