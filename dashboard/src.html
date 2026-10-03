@@ -1,0 +1,484 @@
+<title>반품 모니터링 대시보드</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: 상단 고정 바(기준월·탭) → 탭별 단일 칼럼 패널 · 거래처 상세는 우측 드로어 */
+:root{
+  --bg:#f4f5f7; --surface:#ffffff; --ink:#14181f; --ink-2:#4a5260; --ink-3:#7a8291; --rule:#dfe3ea; --rule-2:#eef1f5;
+  --accent:#1f4fa3; --accent-soft:#e6edf8;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s4:#eda100; --gray:#b9bfc9; --gray-2:#d8dce3;
+  --crit:#c62f2f; --crit-soft:#fbeaea; --warn:#a86a00; --warn-soft:#fdf3e1; --good:#1d7a46; --good-soft:#e5f4ea; --scrim:rgba(15,18,24,.38);
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif; --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#12151b; --surface:#1a1e26; --ink:#eef1f6; --ink-2:#b8c0cc; --ink-3:#8a93a2; --rule:#2e3440; --rule-2:#232833;
+  --accent:#7fa8ec; --accent-soft:#1f2b40; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --gray:#555d6b; --gray-2:#3a414d;
+  --crit:#ef6b6b; --crit-soft:#3a1f22; --warn:#e0a640; --warn-soft:#352a17; --good:#4fc283; --good-soft:#1b3326; --scrim:rgba(0,0,0,.55); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151b; --surface:#1a1e26; --ink:#eef1f6; --ink-2:#b8c0cc; --ink-3:#8a93a2; --rule:#2e3440; --rule-2:#232833;
+  --accent:#7fa8ec; --accent-soft:#1f2b40; --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s4:#c98500; --gray:#555d6b; --gray-2:#3a414d;
+  --crit:#ef6b6b; --crit-soft:#3a1f22; --warn:#e0a640; --warn-soft:#352a17; --good:#4fc283; --good-soft:#1b3326; --scrim:rgba(0,0,0,.55); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14.5px;line-height:1.55;margin:0}
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:10;background:var(--surface);border-bottom:1px solid var(--rule)}
+.bar-in{max-width:1180px;margin:0 auto;padding-inline:20px;display:flex;flex-wrap:wrap;gap:6px 18px;align-items:center;padding-block:10px 0}
+.brand{font-weight:700;font-size:16px;margin-right:auto}
+.brand small{font-weight:400;color:var(--ink-3);font-size:12px;margin-left:8px}
+.ctl{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--ink-2)}
+select,input[type=number],input[type=file]{font:inherit;font-size:13px;color:var(--ink);background:var(--bg);border:1px solid var(--rule);border-radius:4px;padding:4px 6px}
+.tabs{display:flex;gap:2px;overflow-x:auto;width:100%;margin-top:4px}
+.tabs button{font:inherit;font-size:13.5px;background:none;border:0;border-bottom:3px solid transparent;color:var(--ink-2);padding:8px 12px;cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:700}
+.tabs .cnt{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:9px;background:var(--crit);color:#fff;font-size:11px;font-weight:700;line-height:17px;text-align:center}
+.wrap{max-width:1180px;margin:0 auto;padding-inline:20px;padding-block:18px 60px}
+.pane{display:grid;gap:14px}
+h2{font-size:17px;margin:6px 0 0}
+h3{font-size:14.5px;margin:4px 0 2px}
+.sub{color:var(--ink-3);font-size:12.5px;margin:0}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.tile{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:12px 14px;display:grid;gap:2px;min-width:0}
+.tile .k{font-size:12px;color:var(--ink-3)}
+.tile .v{font-family:var(--f-mono);font-size:22px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.25}
+.tile .v small{font-size:.55em;color:var(--ink-3);margin-left:2px}
+.tile .s{font-size:12px;color:var(--ink-2)}
+.card{background:var(--surface);border:1px solid var(--rule);border-radius:6px;padding:14px 16px;min-width:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.legend{display:flex;flex-wrap:wrap;gap:3px 14px;font-size:12px;color:var(--ink-2);margin:4px 0}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.legend i.ln{height:2px;width:14px;vertical-align:3px}
+.tbl{overflow-x:auto;border:1px solid var(--rule);border-radius:4px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+th,td{padding:7px 9px;border-bottom:1px solid var(--rule-2);text-align:right;white-space:nowrap}
+th{background:var(--rule-2);color:var(--ink-2);font-weight:500;font-size:12px;position:sticky;top:0}
+th.sort{cursor:pointer}th.sort:hover{color:var(--ink)}
+td:first-child,th:first-child{text-align:left}
+td.l,th.l{text-align:left;white-space:normal}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--accent-soft)}
+tr.sum td{font-weight:700;border-top:2px solid var(--ink)}
+.chip{display:inline-block;font-size:11px;font-weight:700;padding:1px 6px;border-radius:3px;margin:1px 2px 1px 0;white-space:nowrap}
+.chip.c2{background:var(--crit-soft);color:var(--crit)}.chip.c1{background:var(--warn-soft);color:var(--warn)}.chip.ok{background:var(--good-soft);color:var(--good)}
+.alerts{display:grid;gap:6px}
+.al{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--rule);border-left:4px solid var(--warn);border-radius:4px;padding:8px 12px;cursor:pointer;font:inherit;text-align:left;color:inherit;width:100%}
+.al.lv2{border-left-color:var(--crit)}
+.al:hover{border-color:var(--accent)}
+.al .who{font-weight:700}.al .what{font-size:12.5px;color:var(--ink-2)}
+.note{font-size:12px;color:var(--ink-3);margin:6px 0 0}
+.judge{border-left:3px solid var(--accent);background:var(--accent-soft);padding:7px 11px;font-size:13.5px;border-radius:0 4px 4px 0}
+.judge b{color:var(--accent)}
+.empty{background:var(--surface);border:1px dashed var(--rule);border-radius:6px;padding:28px;text-align:center;color:var(--ink-2)}
+.btn{font:inherit;font-size:13px;background:var(--accent);color:#fff;border:0;border-radius:4px;padding:7px 14px;cursor:pointer}
+.btn.ghost{background:var(--surface);color:var(--ink);border:1px solid var(--rule)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.form{display:grid;gap:10px;align-content:start}
+.frow{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:center}
+.chips-m{display:flex;flex-wrap:wrap;gap:4px}
+.chips-m span{font-family:var(--f-mono);font-size:11.5px;padding:2px 6px;border-radius:3px;background:var(--good-soft);color:var(--good)}
+.chips-m span.new{background:var(--accent-soft);color:var(--accent)}
+.chips-m span.rep{background:var(--warn-soft);color:var(--warn)}
+.msg{font-size:13px;padding:8px 12px;border-radius:4px}
+.msg.err{background:var(--crit-soft);color:var(--crit)}.msg.ok{background:var(--good-soft);color:var(--good)}.msg.info{background:var(--accent-soft);color:var(--accent)}
+svg text{font-family:var(--f-body)}
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:30}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(720px,100vw);background:var(--bg);z-index:31;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.18)}
+.dh{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:calc(12px + env(safe-area-inset-top,0px)) 18px 10px;border-bottom:1px solid var(--rule);background:var(--surface)}
+.dh h2{margin:0}
+.db{flex:1 1 auto;min-height:0;overflow-y:auto;padding:14px 18px calc(40px + env(safe-area-inset-bottom,0px));display:grid;gap:12px;grid-auto-rows:max-content;align-content:start}
+.tip{position:fixed;pointer-events:none;background:var(--ink);color:var(--bg);font-size:12px;padding:6px 9px;border-radius:4px;line-height:1.5;z-index:40;max-width:280px;white-space:pre-line}
+.kv{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.kv div{background:var(--surface);border:1px solid var(--rule);border-radius:4px;padding:8px 10px}
+.kv b{display:block;font-family:var(--f-mono);font-size:16px;font-weight:500}
+.kv span{font-size:11.5px;color:var(--ink-3)}
+input[type=range]{width:220px;accent-color:var(--accent)}
+@media (max-width:900px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2,.grid3{grid-template-columns:minmax(0,1fr)}.kv{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:480px){.wrap,.bar-in{padding-inline:16px}.frow{grid-template-columns:minmax(0,1fr)}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="bar"><div class="bar-in">
+  <div class="brand">반품 모니터링 대시보드<small>영업본부 · 월 1회 갱신 · 샘플 데이터</small></div>
+  <label class="ctl" for="asof">기준월 <select id="asof" disabled><option>—</option></select></label>
+  <span class="ctl" id="st">불러오는 중…</span>
+  <nav class="tabs" role="tablist" id="tabs">
+    <button role="tab" data-t="sum" aria-selected="true">요약<span class="cnt" id="cnt" hidden></span></button>
+    <button role="tab" data-t="ptn" aria-selected="false">거래처</button>
+    <button role="tab" data-t="lag" aria-selected="false">시차·예측</button>
+    <button role="tab" data-t="cl" aria-selected="false">군집</button>
+    <button role="tab" data-t="pl" aria-selected="false">공헌이익·손익분기</button>
+    <button role="tab" data-t="rev" aria-selected="false">개정판</button>
+    <button role="tab" data-t="data" aria-selected="false">데이터 등록</button>
+  </nav>
+</div></div>
+
+<main class="wrap">
+  <div id="empty" class="empty" hidden></div>
+
+  <section class="pane" id="p-sum">
+    <div class="kpis" id="kpis"></div>
+    <div class="grid2">
+      <div class="card"><h3>월별 출고·반품과 향후 3개월 예상 반품</h3><p class="sub" id="sumSub"></p>
+        <div class="legend"><span><i style="background:var(--s1)"></i>출고</span><span><i style="background:var(--s2)"></i>반품</span><span><i style="background:var(--s4)"></i>예상 반품</span></div><div id="c-sum"></div></div>
+      <div class="card"><h3>이번 달 경보</h3><p class="sub">체크리스트 5항목 · 빨강 경고, 노랑 주의 · 누르면 거래처 상세</p><div class="alerts" id="alerts" style="margin-top:8px"></div></div>
+    </div>
+  </section>
+
+  <section class="pane" id="p-ptn" hidden>
+    <div><h2>거래처 현황</h2><p class="sub">열 제목을 누르면 정렬 · 행을 누르면 상세. 반품액은 (거래처×시리즈) 출고 가중평균 단가 환산</p></div>
+    <div class="tbl"><table id="tb-ptn"></table></div>
+  </section>
+
+  <section class="pane" id="p-lag" hidden>
+    <div><h2>반품 시차곡선과 예측</h2><p class="sub">정상 반품(개정판교체 제외) = Σ 출고(t−k) × 시차 비율 p(k) · 월 합계로 역산(비음수 최소제곱, 인접 평활)</p></div>
+    <div class="judge" id="lagJudge"></div>
+    <div class="grid2">
+      <div class="card"><h3>출고 후 경과월별 반품 비율</h3><div class="legend"><span><i style="background:var(--s2)"></i>해당 월 반품 비율 p(k)</span><span><i class="ln" style="background:var(--s1)"></i>누적</span></div><div id="c-lag"></div></div>
+      <div class="card"><h3>적합도 — 실제 vs 모델</h3><div class="legend"><span><i class="ln" style="background:var(--s2)"></i>실제 정상 반품</span><span><i class="ln" style="background:var(--s1)"></i>모델</span><span><i style="background:var(--gray-2)"></i>백테스트 구간</span></div><div id="c-fit"></div><p class="note" id="btNote"></p></div>
+    </div>
+    <div class="card"><h3>향후 3개월 반품 예측</h3><p class="sub">정상 반품 + 개정판교체(개정판 직전 3개월 구판 출고 × 실측 교체율 × 월별 도착 비중). 미래 출고는 전년 같은 달 값으로 가정</p>
+      <div class="tbl" style="margin-top:8px"><table id="tb-fc"></table></div><div id="fcRev"></div></div>
+  </section>
+
+  <section class="pane" id="p-cl" hidden>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:end;justify-content:space-between"><div><h2>거래처 군집</h2><p class="sub">특성 5개(반품률·공급률·출고 규모·개정판 직전 물량 비중·파본 비중) 표준화 후 k-평균</p></div>
+      <label class="ctl" for="kSel">군집 수 <select id="kSel"><option>2</option><option selected>3</option><option>4</option></select></label></div>
+    <div class="grid2">
+      <div class="card"><h3>반품률 × 공급률</h3><p class="sub">원 크기 = 출고부수 · 색 = 군집</p><div class="legend" id="lg-cl"></div><div id="c-cl"></div></div>
+      <div id="clCards" style="display:grid;gap:10px;align-content:start"></div>
+    </div>
+    <div class="tbl"><table id="tb-cl"></table></div>
+  </section>
+
+  <section class="pane" id="p-pl" hidden>
+    <div style="display:flex;flex-wrap:wrap;gap:8px 16px;align-items:end;justify-content:space-between"><div><h2>공헌이익과 손익분기 반품률</h2><p class="sub">공헌이익 = 실판매 매출 − (출고분 제작원가 − 재판매 가능 반품 원가) − 반품 × 왕복 물류비</p></div>
+      <label class="ctl" for="lRange">물류비 가정 <input type="range" id="lRange" min="1000" max="1800" step="100"><b id="lVal"></b>원/부</label></div>
+    <div class="judge" id="plJudge"></div>
+    <div class="grid2">
+      <div class="card"><h3>거래처별 공헌이익</h3><div class="legend"><span><i style="background:var(--s1)"></i>공헌이익</span><span><i style="background:var(--gray)"></i>반품으로 줄어든 공헌이익(막대 끝 = 반품이 없었을 때)</span></div><div id="c-pl"></div></div>
+      <div class="card"><h3>현재 반품률 → 손익분기 반품률</h3><div class="legend"><span><i style="background:var(--s2)"></i>현재 누적 반품률</span><span><i style="background:var(--s1)"></i>손익분기</span></div><div id="c-be"></div></div>
+    </div>
+    <div class="tbl"><table id="tb-pl"></table></div>
+    <p class="note">손익분기 r* = (p − c) ÷ (p − c + L + d·c) · p 평균 공급단가, c 평균 제작원가, L 물류비, d 반품 중 재판매 불가(개정판교체·파본) 비중. 인세·창고·금융비용 미반영 → 실제 손익분기는 더 낮음. 물류비 조정은 이 화면에서만 적용(저장되지 않음)</p>
+  </section>
+
+  <section class="pane" id="p-rev" hidden>
+    <div><h2>개정판 출간 전후 구판 흐름</h2><p class="sub">출고 상한: M-3 1.0배 · M-2 0.7배 · M-1 0.5배(평상시 월평균 = 구간 밖 출고 발생 월 평균)</p></div>
+    <div class="judge" id="revJudge"></div>
+    <div class="card"><h3>예정 개정판 — 상한 대비 출고</h3><div class="legend"><span><i style="background:var(--s1)"></i>실제 출고</span><span><i class="ln" style="background:var(--crit)"></i>상한</span></div><div id="upc"></div></div>
+    <div class="tbl"><table id="tb-ev"></table></div>
+  </section>
+
+  <section class="pane" id="p-data" hidden>
+    <div><h2>데이터 등록</h2><p class="sub">월 마감 후 CSV 업로드 → 검증 → 등록. 같은 월을 다시 올리면 그 월의 해당 파일(출고 또는 반품)을 교체</p></div>
+    <div class="card"><h3>등록된 월</h3><div class="chips-m" id="regMonths" style="margin-top:6px"></div><p class="note" id="regNote"></p></div>
+    <div class="grid2">
+      <div class="card form" id="upForm">
+        <h3>CSV 업로드</h3>
+        <div class="frow"><label for="fShip">출고 CSV</label><input type="file" id="fShip" accept=".csv,text/csv"></div>
+        <div class="frow"><label for="fRet">반품 CSV</label><input type="file" id="fRet" accept=".csv,text/csv"></div>
+        <div class="frow"><label for="fMas">도서마스터 CSV(선택)</label><input type="file" id="fMas" accept=".csv,text/csv"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" id="bCheck" type="button">검증</button><button class="btn" id="bSave" type="button" disabled>등록</button></div>
+        <div id="vRes"></div>
+      </div>
+      <div class="card form">
+        <h3>파일 형식</h3>
+        <div class="tbl"><table>
+          <tr><th>파일</th><th class="l">필수 열(첫 행 제목)</th></tr>
+          <tr><td>출고</td><td class="l">월(YYYY-MM), 거래처명, 시리즈명, 출고부수_부, 공급단가_원부</td></tr>
+          <tr><td>반품</td><td class="l">월, 거래처명, 시리즈명, 반품부수_부, 반품사유</td></tr>
+          <tr><td>도서마스터</td><td class="l">시리즈명, 과목, 학년, 정가_원, 제작원가_원부, 개정판출간월</td></tr>
+        </table></div>
+        <h3>기준값</h3>
+        <div class="frow"><label for="pLog">반품 왕복 물류비(원/부)</label><div style="display:flex;gap:8px"><input type="number" id="pLog" min="0" step="100" style="width:110px"><button class="btn ghost" id="bParam" type="button">저장</button></div></div>
+        <p class="note">모든 화면의 기본 물류비. 자사 실제 단가로 교체하는 값</p>
+        <h3>최근 등록 이력</h3><div class="tbl"><table id="tb-up"></table></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" hidden role="dialog" aria-modal="true" aria-labelledby="dt">
+  <div class="dh"><h2 id="dt"></h2><button class="btn ghost" id="dclose" type="button">닫기 ✕</button></div>
+  <div class="db" id="dbody"></div>
+</aside>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+%%ENGINE%%
+</script>
+<script>
+const $=s=>document.querySelector(s), $$=s=>document.querySelectorAll(s);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const nf=n=>Math.round(n).toLocaleString('ko-KR');
+const pct=(x,d=1)=>x==null||isNaN(x)?'—':(x*100).toFixed(d)+'%';
+const eok=(x,d=1)=>(x/1e8).toFixed(d)+'억';
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const NS='http://www.w3.org/2000/svg';
+function el(t,a,p){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(p)p.appendChild(e);return e}
+const tip=$('#tip');
+function hit(node,txt){node.addEventListener('mousemove',e=>{tip.textContent=typeof txt==='function'?txt():txt;tip.hidden=false;tip.style.left=Math.min(e.clientX+14,innerWidth-290)+'px';tip.style.top=(e.clientY+14)+'px'});node.addEventListener('mouseleave',()=>tip.hidden=true)}
+function frame(host,h,ml=52,mr=14,mt=10,mb=26){host.innerHTML='';const W=Math.max(host.clientWidth,280);const svg=el('svg',{viewBox:`0 0 ${W} ${h}`,width:'100%',height:h,role:'img'},host);return {svg,W,h,ml,mr,mt,mb,iw:W-ml-mr,ih:h-mt-mb}}
+function yAxis(f,max,ticks,fmt,min=0){for(let i=0;i<=ticks;i++){const v=min+(max-min)*i/ticks;const y=f.mt+f.ih-(v-min)/(max-min)*f.ih;el('line',{x1:f.ml,x2:f.W-f.mr,y1:y,y2:y,stroke:css('--rule')},f.svg);const t=el('text',{x:f.ml-6,y:y+4,'text-anchor':'end','font-size':11,fill:css('--ink-3')},f.svg);t.textContent=fmt(v)}}
+function xLab(f,labels,step,xOf){step=Math.max(step,Math.ceil(labels.length*40/f.iw));labels.forEach((l,i)=>{if(i%step)return;const t=el('text',{x:xOf(i),y:f.h-8,'text-anchor':'middle','font-size':11,fill:css('--ink-3')},f.svg);t.textContent=l})}
+const fq=v=>v>=10000?((v/10000)%1?(v/10000).toFixed(1):(v/10000).toFixed(0))+'만':nf(v);
+function nice(v){const p=Math.pow(10,Math.floor(Math.log10(v||1)));const m=v/p;return ([1,1.5,2,2.5,3,4,5,6,8,10].find(x=>m<=x))*p}
+const ALN={rate:'최근 12개월 반품률',rank:'실판매 순위 하락',sr:'반기 공급률 변화',pabon:'파본 비중(12개월)'};
+const alTxt=a=>a.k==='rate'?`${ALN.rate} ${pct(a.v)}`:a.k==='rank'?`${ALN.rank} ▼${-a.v}`:a.k==='sr'?`${ALN.sr} ${a.v.toFixed(2)}%p`:`${ALN.pabon} ${pct(a.v)}`;
+
+// ---------- 상태
+const ST={months:{},master:null,params:{logistics:1400},uploads:[],asOf:null,k:3,Lw:null,tab:'sum',sort:{key:'rev',dir:-1},model:null,db:null,user:null,canWrite:null,staged:null};
+let rt=null;function schedule(){clearTimeout(rt);rt=setTimeout(recompute,120)}
+function recompute(){
+  const ms=Object.values(ST.months);
+  const months=ms.map(d=>d.ym).sort();
+  const sel=$('#asof');
+  if(!ms.length||!ST.master){ST.model=null;showEmpty();renderData();return}
+  $('#empty').hidden=true;
+  const latest=months[months.length-1];if(!ST.asOf||!months.includes(ST.asOf)||ST.asOf===ST.latest)ST.asOf=latest;ST.latest=latest;
+  sel.innerHTML=months.slice().reverse().map(m=>`<option${m===ST.asOf?' selected':''}>${m}</option>`).join('');sel.disabled=false;
+  const L=+ST.params.logistics||1400;
+  ST.model=Engine.build(ms,ST.master,{logistics:L},ST.asOf,{k:ST.k});
+  ST.modelW=null;
+  $('#st').textContent=`데이터 ${months[0]}~${months[months.length-1]} · ${months.length}개월 · 물류비 ${nf(L)}원`;
+  const n=ST.model.P.filter(p=>p.alerts.some(a=>a.lv===2)).length+ST.model.serAlerts.filter(a=>a.lv===2).length;
+  $('#cnt').hidden=!n;$('#cnt').textContent=n;
+  render();
+}
+function showEmpty(){const e=$('#empty');e.hidden=false;
+  e.innerHTML=ST.db===false?'저장소에 연결할 수 없습니다. claude.ai에서 이 대시보드를 열어야 등록된 데이터가 표시됩니다.':'등록된 데이터가 없습니다. <b>데이터 등록</b> 탭에서 출고·반품·도서마스터 CSV를 올리면 이 화면이 채워집니다.';
+  $$('section.pane').forEach(s=>s.hidden=s.id!=='p-data'&&true);if(ST.tab==='data')$('#p-data').hidden=false;}
+
+// ---------- 탭
+$$('#tabs button').forEach(b=>b.addEventListener('click',()=>{ST.tab=b.dataset.t;$$('#tabs button').forEach(x=>x.setAttribute('aria-selected',x===b));render();try{localStorage.setItem('rm-tab',ST.tab)}catch(e){}}));
+try{const t=localStorage.getItem('rm-tab');if(t&&$(`#tabs button[data-t="${t}"]`)){ST.tab=t;$$('#tabs button').forEach(x=>x.setAttribute('aria-selected',x.dataset.t===t))}}catch(e){}
+$('#asof').addEventListener('change',e=>{ST.asOf=e.target.value;recompute()});
+$('#kSel').addEventListener('change',e=>{ST.k=+e.target.value;recompute()});
+function render(){
+  $$('section.pane').forEach(s=>s.hidden=s.id!=='p-'+ST.tab);
+  if(!ST.model){if(ST.tab!=='data'){$('#p-'+ST.tab).hidden=true;showEmpty()}renderData();return}
+  ({sum:rSum,ptn:rPtn,lag:rLag,cl:rCl,pl:rPl,rev:rRev,data:renderData})[ST.tab]();
+}
+
+// ---------- 요약
+function rSum(){const m=ST.model,T=m.T;const f3=m.fc.reduce((a,f)=>a+f.total,0);
+ const tiles=[['누적 반품률',pct(T.rate),`반품 ${nf(T.ret)} / 출고 ${nf(T.ship)}부`],
+  ['최근 12개월 반품액',eok(T.retamt12)+'<small>원</small>',`출고액 ${eok(T.rev12)}의 ${pct(T.retamt12/T.rev12)}`],
+  ['최근 12개월 현금 손실',eok(T.cash12)+'<small>원</small>',`물류 ${eok(T.ret12*m.L)} · 폐기 ${eok(T.cash12-T.ret12*m.L)}`],
+  ['공헌이익률(누적)',pct(T.contrib/T.rev),`공헌이익 ${eok(T.contrib)}`],
+  ['향후 3개월 예상 반품',nf(f3)+'<small>부</small>',`개정판교체 ${nf(m.fc.reduce((a,f)=>a+f.rev,0))}부 포함`]];
+ $('#kpis').innerHTML=tiles.map(t=>`<div class="tile"><span class="k">${t[0]}</span><span class="v">${t[1]}</span><span class="s">${t[2]}</span></div>`).join('');
+ $('#sumSub').textContent=`기준월 ${m.asOf} · 최근 24개월`;
+ // 차트
+ const host=$('#c-sum');const mon=m.mon.slice(-24);const fc=m.fc;const all=mon.length+fc.length;const f=frame(host,260,52);
+ const max=nice(Math.max(...mon.map(o=>o.ship)));yAxis(f,max,4,v=>v?fq(v):'0');const bw=f.iw/all;
+ mon.forEach((o,i)=>{const x=f.ml+i*bw;const w=Math.max((bw-4)/2,1);[[o.ship,'--s1',0],[o.ret,'--s2',1]].forEach(([v,c,k])=>{const hh=v/max*f.ih;if(hh>0)el('rect',{x:x+2+k*w,y:f.mt+f.ih-hh,width:w,height:hh,fill:css(c)},f.svg)});
+  const r=el('rect',{x,y:f.mt,width:bw,height:f.ih,fill:'transparent'},f.svg);hit(r,`${o.m}\n출고 ${nf(o.ship)}부\n반품 ${nf(o.ret)}부`)});
+ fc.forEach((o,j)=>{const i=mon.length+j;const x=f.ml+i*bw;const w=Math.max((bw-4)/2,1);const hh=o.total/max*f.ih;el('rect',{x:x+2+w,y:f.mt+f.ih-hh,width:w,height:hh,fill:css('--s4')},f.svg);
+  const r=el('rect',{x,y:f.mt,width:bw,height:f.ih,fill:'transparent'},f.svg);hit(r,`${o.m} 예상 반품 ${nf(o.total)}부\n정상 ${nf(o.normal)} · 개정판교체 ${nf(o.rev)}`)});
+ const xs=el('line',{x1:f.ml+mon.length*bw,x2:f.ml+mon.length*bw,y1:f.mt,y2:f.mt+f.ih,stroke:css('--ink-3')},f.svg);
+ xLab(f,mon.map(o=>o.m.slice(2)).concat(fc.map(o=>o.m.slice(2))),3,i=>f.ml+i*bw+bw/2);
+ // 경보
+ const items=[];m.P.forEach(p=>p.alerts.forEach(a=>items.push({lv:a.lv,who:p.n,what:alTxt(a),p:p.n})));
+ m.serAlerts.forEach(a=>items.push({lv:a.lv,who:a.s,what:`개정판(${a.M}) M${a.off} 출고 ${nf(a.v)}부 = 평상시 ${a.r.toFixed(2)}배 · 상한 ${nf(a.cap)}부`,s:true}));
+ items.sort((a,b)=>b.lv-a.lv);
+ $('#alerts').innerHTML=items.length?items.slice(0,14).map((x,i)=>`<button class="al lv${x.lv}" data-i="${i}" type="button"><span class="chip ${x.lv===2?'c2':'c1'}">${x.lv===2?'경고':'주의'}</span><span><span class="who">${esc(x.who)}</span> <span class="what">${esc(x.what)}</span></span><span class="what">›</span></button>`).join('')+(items.length>14?`<p class="note">외 ${items.length-14}건 — 거래처 탭에서 확인</p>`:''):'<p class="note">경보 없음</p>';
+ $$('#alerts .al').forEach(b=>b.addEventListener('click',()=>{const x=items[+b.dataset.i];if(x.s){ST.tab='rev';$$('#tabs button').forEach(t=>t.setAttribute('aria-selected',t.dataset.t==='rev'));render()}else openP(x.p,b)}));
+}
+
+// ---------- 거래처 표
+const PCOLS=[['n','거래처',p=>esc(p.n)],['ship','출고부수',p=>nf(p.ship)],['rate','누적 반품률',p=>pct(p.rate)],['rate12','12개월 반품률',p=>pct(p.rate12)],['rev','출고 매출',p=>eok(p.rev,2)],['netrev','실판매 매출',p=>eok(p.netrev,2)],
+ ['move','순위 이동',p=>p.move?`<span style="color:var(${p.move>0?'--good':'--crit'});font-weight:700">${p.move>0?'▲':'▼'}${Math.abs(p.move)}</span>`:'—'],['sr','공급률',p=>pct(p.sr,2)],['srChg','반기 공급률 변화',p=>p.srChg==null?'—':p.srChg.toFixed(2)+'%p'],
+ ['contrib','공헌이익',p=>eok(p.contrib,2)],['cl','군집',p=>'G'+(p.cl+1)],['sev','경보',p=>p.alerts.map(a=>`<span class="chip c${a.lv}">${({rate:'반품률',rank:'순위',sr:'공급률',pabon:'파본'})[a.k]}</span>`).join('')||'<span class="chip ok">정상</span>']];
+function rPtn(){const m=ST.model,s=ST.sort;const rows=m.P.slice().sort((a,b)=>{const x=a[s.key],y=b[s.key];if(typeof x==='string')return s.dir*x.localeCompare(y);return s.dir*((x??-1e18)-(y??-1e18))});
+ let h='<tr>'+PCOLS.map(c=>`<th class="sort" data-k="${c[0]}">${c[1]}${s.key===c[0]?(s.dir<0?' ↓':' ↑'):''}</th>`).join('')+'</tr>';
+ rows.forEach(p=>h+=`<tr class="click" data-n="${esc(p.n)}">`+PCOLS.map(c=>`<td>${c[2](p)}</td>`).join('')+'</tr>');
+ const T=m.T;h+=`<tr class="sum"><td>합계 ${m.P.length}곳</td><td>${nf(T.ship)}</td><td>${pct(T.rate)}</td><td>${pct(T.ret12/T.ship12)}</td><td>${eok(T.rev,2)}</td><td>${eok(T.netrev,2)}</td><td></td><td>${pct(T.sr,2)}</td><td></td><td>${eok(T.contrib,2)}</td><td></td><td></td></tr>`;
+ $('#tb-ptn').innerHTML=h;
+ $$('#tb-ptn th.sort').forEach(t=>t.addEventListener('click',()=>{const k=t.dataset.k;ST.sort=ST.sort.key===k?{key:k,dir:-ST.sort.dir}:{key:k,dir:k==='n'?1:-1};rPtn()}));
+ $$('#tb-ptn tr.click').forEach(r=>r.addEventListener('click',()=>openP(r.dataset.n,r)));
+}
+
+// ---------- 거래처 상세 드로어
+let lastFocus=null;
+function openP(n,btn){const m=ST.model,p=m.PM[n];if(!p)return;lastFocus=btn;$('#dt').textContent=n;const T=m.T;
+ const lv=p.alerts.length?p.alerts.map(a=>`<span class="chip c${a.lv}">${a.lv===2?'경고':'주의'} · ${esc(alTxt(a))}</span>`).join(' '):'<span class="chip ok">경보 없음</span>';
+ const cl=m.clusters[p.cl];
+ $('#dbody').innerHTML=`<div>${lv}</div>
+ <div class="kv"><div><span>누적 반품률</span><b>${pct(p.rate)}</b><span>자기 제외 평균 ${pct(p.exRate)}</span></div><div><span>초과 반품</span><b>${nf(Math.max(p.excess,0))}부</b><span>매출 ${eok(Math.max(p.excessAmt,0),2)}</span></div><div><span>공헌이익</span><b>${eok(p.contrib,2)}</b><span>공헌이익률 ${pct(p.cm)}</span></div><div><span>손익분기 반품률</span><b>${pct(p.be)}</b><span>여유 ${(p.headroom*100).toFixed(1)}%p</span></div></div>
+ <div class="card"><h3>월별 출고·반품</h3><div class="legend"><span><i style="background:var(--s1)"></i>출고</span><span><i style="background:var(--s2)"></i>반품</span></div><div id="c-p1"></div></div>
+ <div class="tbl"><table>
+  <tr><th>항목</th><th>값</th><th class="l">설명</th></tr>
+  <tr><td>출고 / 반품 / 실판매</td><td>${nf(p.ship)} / ${nf(p.ret)} / ${nf(p.ship-p.ret)}</td><td class="l">${m.T.first}~${m.asOf}</td></tr>
+  <tr><td>출고 매출 → 실판매 매출</td><td>${eok(p.rev,2)} → ${eok(p.netrev,2)}</td><td class="l">출고 순위 ${p.rk_rev}위 → 실판매 ${p.rk_netrev}위</td></tr>
+  <tr><td>공헌이익 구성</td><td>${eok(p.contrib,2)}</td><td class="l">실판매 매출 ${eok(p.netrev,2)} − 순 제작원가 ${eok(p.shipCost-p.resellCost,2)} − 물류 ${eok(p.log,2)}</td></tr>
+  <tr><td>출고 1부당 공헌</td><td>${nf(p.contribPer)}원</td><td class="l">평균 공급단가 ${nf(p.price)} · 제작원가 ${nf(p.unitCost)} · 재판매 불가 비중 ${pct(p.d)}</td></tr>
+  <tr><td>공급률 · 반기 변화</td><td>${pct(p.sr,2)} · ${p.srChg==null?'—':p.srChg.toFixed(2)+'%p'}</td><td class="l">최근 6개월 vs 그 전 6개월</td></tr>
+  <tr><td>파본 비중(12개월)</td><td>${pct(p.pabonShare12)}</td><td class="l">전사 누적 ${pct(T.pabonShare)}</td></tr>
+  <tr><td>개정판 직전 구간 출고 비중</td><td>${pct(p.winShare)}</td><td class="l">자기 출고 중 개정판 M-3~M-1 구판 출고</td></tr>
+  <tr><td>군집</td><td>G${p.cl+1}</td><td class="l">${esc(cl.tag)}</td></tr>
+ </table></div>`;
+ $('#scrim').hidden=false;$('#drawer').hidden=false;document.body.style.overflow='hidden';
+ requestAnimationFrame(()=>{drawP(p);$('#dclose').focus()});}
+function drawP(p){const m=ST.model;const host=$('#c-p1');const f=frame(host,220,48,40);const mon=p.mon;const max=nice(Math.max(...mon.map(x=>x[0]),1));yAxis(f,max,4,fq);const bw=f.iw/mon.length;
+ let cs=0,cr=0;const cum=mon.map(x=>{cs+=x[0];cr+=x[1];return cs?cr/cs:0});
+ mon.forEach((x,i)=>{const X=f.ml+i*bw;const w=Math.max((bw-4)/2,1);[[x[0],'--s1',0],[x[1],'--s2',1]].forEach(([v,c,k])=>{const hh=v/max*f.ih;if(hh>0)el('rect',{x:X+2+k*w,y:f.mt+f.ih-hh,width:w,height:hh,fill:css(c)},f.svg)});
+  const r=el('rect',{x:X,y:f.mt,width:bw,height:f.ih,fill:'transparent'},f.svg);hit(r,`${m.months[i]}\n출고 ${nf(x[0])} · 반품 ${nf(x[1])}\n누적 반품률 ${pct(cum[i])}`)});
+ xLab(f,m.months.map(x=>x.slice(2)),6,i=>f.ml+i*bw+bw/2);}
+function closeD(){$('#scrim').hidden=true;$('#drawer').hidden=true;document.body.style.overflow='';tip.hidden=true;if(lastFocus&&lastFocus.focus)lastFocus.focus()}
+$('#dclose').addEventListener('click',closeD);$('#scrim').addEventListener('click',closeD);addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#drawer').hidden)closeD()});
+
+// ---------- 시차·예측
+function rLag(){const m=ST.model,lag=m.lag;const top=lag.p.map((v,k)=>({v,k})).sort((a,b)=>b.v-a.v).slice(0,3).map(x=>x.k).sort((a,b)=>a-b);
+ const c80=lag.cum.findIndex(c=>c>=0.8*lag.total);
+ $('#lagJudge').innerHTML=`<b>→ 판단:</b> 정상 반품은 출고 후 <b>${top[0]}~${top[top.length-1]}개월</b>에 집중, ${c80}개월 안에 80%가 돌아옴. 장기 정상 반품률 ${pct(lag.total)}(개정판교체 제외). 모델 오차 ${pct(lag.wape)}${m.bt?` · 최근 6개월 백테스트 오차 ${pct(m.bt.wape)}`:''}`;
+ {const host=$('#c-lag');const f=frame(host,230,46);const max=nice(lag.total);yAxis(f,max,4,v=>(v*100).toFixed(0)+'%');const n=lag.p.length,bw=f.iw/n;
+  lag.p.forEach((v,k)=>{const hh=v/max*f.ih;el('rect',{x:f.ml+k*bw+bw*0.2,y:f.mt+f.ih-hh,width:bw*0.6,height:Math.max(hh,0),rx:2,fill:css('--s2')},f.svg);const r=el('rect',{x:f.ml+k*bw,y:f.mt,width:bw,height:f.ih,fill:'transparent'},f.svg);hit(r,`출고 후 ${k}개월\n해당 월 ${pct(v,2)} · 누적 ${pct(lag.cum[k],2)}\n(누적 중 ${pct(lag.cum[k]/lag.total,0)})`)});
+  let d='';lag.cum.forEach((c,k)=>{d+=(k?'L':'M')+(f.ml+k*bw+bw/2)+','+(f.mt+f.ih-c/max*f.ih)});el('path',{d,fill:'none',stroke:css('--s1'),'stroke-width':2},f.svg);
+  xLab(f,lag.p.map((_,k)=>k+'개월'),2,k=>f.ml+k*bw+bw/2);}
+ {const host=$('#c-fit');const f=frame(host,230,52);const mon=m.mon;const max=nice(Math.max(...mon.map(o=>o.retN),...lag.pred));yAxis(f,max,4,v=>v?fq(v):'0');const xOf=i=>f.ml+i*(f.iw/(mon.length-1));
+  if(m.bt){const x0=xOf(mon.length-6);el('rect',{x:x0,y:f.mt,width:f.W-f.mr-x0,height:f.ih,fill:css('--gray-2')},f.svg)}
+  const line=(vals,c)=>{let d='';vals.forEach((v,i)=>{d+=(i?'L':'M')+xOf(i)+','+(f.mt+f.ih-v/max*f.ih)});el('path',{d,fill:'none',stroke:css(c),'stroke-width':2,'stroke-linejoin':'round'},f.svg)};
+  line(mon.map(o=>o.retN),'--s2');line(lag.pred,'--s1');
+  if(m.bt){let d='';m.bt.forEach((b,j)=>{const i=mon.length-6+j;d+=(j?'L':'M')+xOf(i)+','+(f.mt+f.ih-b.pred/max*f.ih)});el('path',{d,fill:'none',stroke:css('--ink-2'),'stroke-width':1.5},f.svg)}
+  mon.forEach((o,i)=>{const r=el('rect',{x:xOf(i)-f.iw/mon.length/2,y:f.mt,width:f.iw/mon.length,height:f.ih,fill:'transparent'},f.svg);const b=m.bt&&i>=mon.length-6?m.bt[i-(mon.length-6)]:null;hit(r,`${o.m}\n실제 ${nf(o.retN)} · 모델 ${nf(lag.pred[i])}${b?`\n백테스트 예측 ${nf(b.pred)}`:''}`)});
+  xLab(f,mon.map(o=>o.m.slice(2)),4,xOf);
+  $('#btNote').textContent=m.bt?`회색 구간: ${m.bt[0].m} 이전 데이터만으로 적합한 모델이 그 뒤 6개월을 예측(가는 선) — 오차 ${pct(m.bt.wape)}`:'백테스트에는 18개월 이상 필요';}
+ let h='<tr><th>월</th><th>정상 반품</th><th>그중 기출고분</th><th>개정판교체</th><th>합계</th><th>예상 반품액</th><th>예상 물류비</th></tr>';const T=m.T;const unit=T.retamt/T.ret;
+ m.fc.forEach(f=>h+=`<tr><td>${f.m}</td><td>${nf(f.normal)}</td><td>${nf(f.normalKnown)}</td><td>${nf(f.rev)}</td><td><b>${nf(f.total)}</b></td><td>${eok(f.total*unit,2)}</td><td>${eok(f.total*m.L,2)}</td></tr>`);
+ const s3=m.fc.reduce((a,f)=>a+f.total,0);h+=`<tr class="sum"><td>3개월</td><td>${nf(m.fc.reduce((a,f)=>a+f.normal,0))}</td><td>${nf(m.fc.reduce((a,f)=>a+f.normalKnown,0))}</td><td>${nf(m.fc.reduce((a,f)=>a+f.rev,0))}</td><td>${nf(s3)}</td><td>${eok(s3*unit,2)}</td><td>${eok(s3*m.L,2)}</td></tr>`;
+ $('#tb-fc').innerHTML=h;
+ const it={};m.fc.forEach(f=>f.revItems.forEach(x=>{const k=x.s+'|'+x.M;(it[k]||(it[k]={s:x.s,M:x.M,v:0,cost:x.cost,win:x.win,est:x.est})).v+=x.v}));
+ const evs=Object.values(it);
+ $('#fcRev').innerHTML=evs.length?`<p class="note" style="margin-top:10px">개정판교체 예상: ${evs.map(e=>`<b>${esc(e.s)}</b>(${e.M} 개정, 직전 3개월 구판 출고 ${nf(e.win)}부${e.est?'·일부 추정':''}) ${nf(e.v)}부 → 폐기원가 ${eok(e.v*e.cost,2)}`).join(' · ')} · 교체율 ${pct(m.REV.replRate)}(실측 ${m.REV.n}종)</p>`:'<p class="note">3개월 안에 도착할 개정판교체 반품 없음</p>';
+}
+
+// ---------- 군집
+const CLC=['--s2','--s1','--s3','--s4'];
+function rCl(){const m=ST.model;$('#kSel').value=ST.k;
+ $('#lg-cl').innerHTML=m.clusters.map(c=>`<span><i style="background:var(${CLC[c.j]})"></i>G${c.j+1}</span>`).join('');
+ const host=$('#c-cl');const f=frame(host,300,52,20,14,34);const xs=m.CL.map(c=>c.rate),ys=m.CL.map(c=>c.sr);
+ const x0=0,x1=nice(Math.max(...xs)*1.1),y0=Math.floor(Math.min(...ys)*100-1)/100,y1=Math.ceil(Math.max(...ys)*100+1)/100;
+ const X=v=>f.ml+(v-x0)/(x1-x0)*f.iw,Y=v=>f.mt+f.ih-(v-y0)/(y1-y0)*f.ih;
+ for(let i=0;i<=4;i++){const v=x0+(x1-x0)*i/4;el('line',{x1:X(v),x2:X(v),y1:f.mt,y2:f.mt+f.ih,stroke:css('--rule')},f.svg);const t=el('text',{x:X(v),y:f.h-16,'text-anchor':'middle','font-size':11,fill:css('--ink-3')},f.svg);t.textContent=Math.round(v*100)+'%'}
+ for(let i=0;i<=4;i++){const v=y0+(y1-y0)*i/4;el('line',{x1:f.ml,x2:f.W-f.mr,y1:Y(v),y2:Y(v),stroke:css('--rule')},f.svg);const t=el('text',{x:f.ml-6,y:Y(v)+4,'text-anchor':'end','font-size':11,fill:css('--ink-3')},f.svg);t.textContent=(v*100).toFixed(1)+'%'}
+ const tx=el('text',{x:f.W-f.mr,y:f.h-2,'text-anchor':'end','font-size':11,fill:css('--ink-3')},f.svg);tx.textContent='누적 반품률 →';
+ const ty=el('text',{x:f.ml+4,y:f.mt+10,'font-size':11,fill:css('--ink-3')},f.svg);ty.textContent='↑ 공급률';
+ const smax=Math.max(...m.CL.map(c=>m.PM[c.n].ship));const placed=[];
+ m.CL.slice().sort((a,b)=>m.PM[b.n].ship-m.PM[a.n].ship).forEach(c=>{const p=m.PM[c.n];const r=5+14*Math.sqrt(p.ship/smax);const ci=el('circle',{cx:X(c.rate),cy:Y(c.sr),r,fill:css(CLC[c.cl]),'fill-opacity':0.8,stroke:css('--surface'),'stroke-width':2},f.svg);
+  hit(ci,`${c.n} · G${c.cl+1}\n반품률 ${pct(c.rate)} · 공급률 ${pct(c.sr,2)}\n출고 ${nf(p.ship)}부\n개정판 직전 물량 ${pct(c.winShare)} · 파본 ${pct(c.pabonShare)}`);ci.style.cursor='pointer';ci.addEventListener('click',()=>openP(c.n,null));
+  const lx=X(c.rate)+r+3,ly=Y(c.sr)+4,lw=c.n.length*11+4;if(!placed.some(b=>lx<b[0]+b[2]&&lx+lw>b[0]&&Math.abs(ly-b[1])<13)&&lx+lw<f.W){placed.push([lx,ly,lw]);const t=el('text',{x:lx,y:ly,'font-size':11,fill:css('--ink-2')},f.svg);t.textContent=c.n}});
+ const POL=c=>{const z=c.z;const a=[];if(z[0]>0.5)a.push('반품률 상한·물류비 분담 협의');if(z[3]>0.8)a.push('개정판 직전 출고 상한 우선 적용');if(z[1]<-0.5&&z[0]<=0.5)a.push('실판매 기준 성과 관리 유지');if(z[1]>0.5)a.push('공급률 추이 반기 점검');if(z[4]>0.8)a.push('파본 전표·검품 대조');if(!a.length)a.push('월별 체크리스트 기본 점검');return a.join(' · ')};
+ $('#clCards').innerHTML=m.clusters.map(c=>`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><h3><span class="chip" style="background:var(${CLC[c.j]});color:#fff">G${c.j+1}</span> ${esc(c.tag)}</h3><span class="note" style="margin:0">${c.members.length}곳</span></div>
+  <p class="sub" style="margin-top:4px">${c.members.map(esc).join(', ')}</p>
+  <p style="margin:6px 0 0;font-size:13px">반품률 ${pct(c.raw.rate)} · 공급률 ${pct(c.raw.sr,1)} · 개정판 직전 물량 ${pct(c.raw.winShare)} · 파본 ${pct(c.raw.pabonShare)} · 공헌이익 ${eok(c.contrib)}</p>
+  <p style="margin:4px 0 0;font-size:13px"><b>관리 방향</b> ${POL(c)}</p></div>`).join('');
+ let h='<tr><th>거래처</th><th>군집</th><th>누적 반품률</th><th>공급률</th><th>출고부수</th><th>개정판 직전 물량 비중</th><th>파본 비중</th></tr>';
+ m.CL.slice().sort((a,b)=>a.cl-b.cl||b.rate-a.rate).forEach(c=>h+=`<tr class="click" data-n="${esc(c.n)}"><td>${esc(c.n)}</td><td>G${c.cl+1}</td><td>${pct(c.rate)}</td><td>${pct(c.sr,2)}</td><td>${nf(m.PM[c.n].ship)}</td><td>${pct(c.winShare)}</td><td>${pct(c.pabonShare)}</td></tr>`);
+ $('#tb-cl').innerHTML=h;$$('#tb-cl tr.click').forEach(r=>r.addEventListener('click',()=>openP(r.dataset.n,r)));
+}
+
+// ---------- 공헌이익·손익분기 (물류비 what-if는 화면 내 재계산)
+$('#lRange').addEventListener('input',e=>{ST.Lw=+e.target.value;$('#lVal').textContent=nf(ST.Lw);ST.modelW=null;rPl()});
+function rPl(){const base=ST.model;const L=ST.Lw||base.L;$('#lRange').value=L;$('#lVal').textContent=nf(L);
+ const m=L===base.L?base:(ST.modelW&&ST.modelW.L===L?ST.modelW:(ST.modelW=Engine.build(Object.values(ST.months),ST.master,{logistics:L},ST.asOf,{k:ST.k})));
+ const P=m.P.slice().sort((a,b)=>b.contrib-a.contrib);const T=m.T;const lo=P.slice().sort((a,b)=>a.cm-b.cm)[0];const tight=P.slice().sort((a,b)=>a.headroom-b.headroom)[0];
+ $('#plJudge').innerHTML=`<b>→ 판단:</b> 전사 공헌이익 ${eok(T.contrib)}(출고액의 ${pct(T.contrib/T.rev)}) · 물류비 ${nf(L)}원 기준. 공헌이익률 최저 <b>${esc(lo.n)}</b> ${pct(lo.cm)}(전사 ${pct(T.contrib/T.rev)}). 손익분기까지 여유가 가장 적은 곳 <b>${esc(tight.n)}</b> — 현재 ${pct(tight.rate)} vs 손익분기 ${pct(tight.be)}`;
+ {const host=$('#c-pl');const H=Math.max(200,P.length*24+28);const f=frame(host,H,96,60,4,20);const max=nice(Math.max(...P.map(p=>p.rev)));const bh=f.ih/P.length;
+  for(let i=0;i<=4;i++){const v=max*i/4,x=f.ml+v/max*f.iw;el('line',{x1:x,x2:x,y1:f.mt,y2:f.mt+f.ih,stroke:css('--rule')},f.svg);const t=el('text',{x,y:f.h-5,'text-anchor':'middle','font-size':10.5,fill:css('--ink-3')},f.svg);t.textContent=(v/1e8).toFixed(0)+'억'}
+  P.forEach((p,i)=>{const y=f.mt+i*bh;const wc=Math.max(p.contrib,0)/max*f.iw;const loss=p.retamt+p.log-p.resellCost;const wl=loss/max*f.iw;
+   el('rect',{x:f.ml,y:y+3,width:wc,height:bh-6,rx:2,fill:css('--s1')},f.svg);el('rect',{x:f.ml+wc+2,y:y+3,width:Math.max(wl-2,0),height:bh-6,rx:2,fill:css('--gray')},f.svg);
+   const t=el('text',{x:f.ml-6,y:y+bh/2+4,'text-anchor':'end','font-size':11,fill:css('--ink')},f.svg);t.textContent=p.n;
+   const v=el('text',{x:f.ml+wc+wl+4,y:y+bh/2+4,'font-size':10.5,fill:css('--ink-2')},f.svg);v.textContent=pct(p.cm,0);
+   const r=el('rect',{x:0,y,width:f.W,height:bh,fill:'transparent'},f.svg);hit(r,`${p.n}\n공헌이익 ${eok(p.contrib,2)} (출고액의 ${pct(p.cm)})\n반품으로 줄어든 공헌이익 ${eok(loss,2)}\n= 반품액 ${eok(p.retamt,2)} + 물류 ${eok(p.log,2)} − 재판매 가능 반품 원가 ${eok(p.resellCost,2)}`);r.style.cursor='pointer';r.addEventListener('click',()=>openP(p.n,null))});}
+ {const Q=m.P.slice().sort((a,b)=>a.headroom-b.headroom);const host=$('#c-be');const H=Math.max(200,Q.length*24+28);const f=frame(host,H,96,20,4,20);const bh=f.ih/Q.length;const max=0.8;
+  for(let i=0;i<=4;i++){const v=max*i/4,x=f.ml+v/max*f.iw;el('line',{x1:x,x2:x,y1:f.mt,y2:f.mt+f.ih,stroke:css('--rule')},f.svg);const t=el('text',{x,y:f.h-5,'text-anchor':'middle','font-size':10.5,fill:css('--ink-3')},f.svg);t.textContent=Math.round(v*100)+'%'}
+  Q.forEach((p,i)=>{const y=f.mt+i*bh+bh/2;const xa=f.ml+p.rate/max*f.iw,xb=f.ml+Math.min(p.be,max)/max*f.iw;
+   el('line',{x1:xa,x2:xb,y1:y,y2:y,stroke:css('--gray'),'stroke-width':3},f.svg);el('circle',{cx:xa,cy:y,r:5,fill:css('--s2'),stroke:css('--surface'),'stroke-width':2},f.svg);el('circle',{cx:xb,cy:y,r:5,fill:css('--s1'),stroke:css('--surface'),'stroke-width':2},f.svg);
+   const t=el('text',{x:f.ml-6,y:y+4,'text-anchor':'end','font-size':11,fill:css('--ink')},f.svg);t.textContent=p.n;
+   const r=el('rect',{x:0,y:y-bh/2,width:f.W,height:bh,fill:'transparent'},f.svg);hit(r,`${p.n}\n현재 ${pct(p.rate)} → 손익분기 ${pct(p.be)}\n여유 ${(p.headroom*100).toFixed(1)}%p · 출고 1부당 공헌 ${nf(p.contribPer)}원`)});}
+ let h='<tr><th>거래처</th><th>출고 매출</th><th>실판매 매출</th><th>순 제작원가</th><th>물류비</th><th>공헌이익</th><th>공헌이익률</th><th>1부당 공헌</th><th>현재 반품률</th><th>손익분기</th><th>여유</th></tr>';
+ P.forEach(p=>h+=`<tr class="click" data-n="${esc(p.n)}"><td>${esc(p.n)}</td><td>${eok(p.rev,2)}</td><td>${eok(p.netrev,2)}</td><td>${eok(p.shipCost-p.resellCost,2)}</td><td>${eok(p.log,2)}</td><td><b>${eok(p.contrib,2)}</b></td><td>${pct(p.cm)}</td><td>${nf(p.contribPer)}원</td><td>${pct(p.rate)}</td><td>${pct(p.be)}</td><td>${(p.headroom*100).toFixed(1)}%p</td></tr>`);
+ h+=`<tr class="sum"><td>합계</td><td>${eok(T.rev,2)}</td><td>${eok(T.netrev,2)}</td><td>${eok(T.shipCost-T.resellCost,2)}</td><td>${eok(T.log,2)}</td><td>${eok(T.contrib,2)}</td><td>${pct(T.contrib/T.rev)}</td><td>${nf(T.contrib/T.ship)}원</td><td>${pct(T.rate)}</td><td></td><td></td></tr>`;
+ $('#tb-pl').innerHTML=h;$$('#tb-pl tr.click').forEach(r=>r.addEventListener('click',()=>openP(r.dataset.n,r)));
+}
+
+// ---------- 개정판
+function rRev(){const m=ST.model,R=m.REV;
+ $('#revJudge').innerHTML=R.n?`<b>→ 판단:</b> 실측 ${R.n}종 — 직전 3개월 구판 출고 평상시 ${R.mult.toFixed(2)}배, 출간 후 3개월 반품률 ${pct(R.rate)}(전사 ${pct(m.T.rate)}의 ${(R.rate/m.T.rate).toFixed(2)}배), 개정판교체율 ${pct(R.replRate)}. 구간 물량 최다 수령: ${R.winPartner.slice(0,3).map(([p,q])=>`${esc(p)} ${pct(q/R.win)}`).join(' · ')}`:'<b>→ 판단:</b> 기간 안에 출간·반품까지 관측된 개정판 없음';
+ const up=$('#upc');if(!R.upcoming.length){up.innerHTML='<p class="note">6개월 안에 예정된 개정판 없음</p>'}else{up.innerHTML=R.upcoming.map((e,i)=>`<div style="margin-top:8px"><b>${esc(e.s)}</b> <span class="note">개정 ${e.M} · 평상시 월평균 ${nf(e.base)}부</span><div id="up-${i}"></div></div>`).join('');
+  R.upcoming.forEach((e,i)=>{const host=$('#up-'+i);const f=frame(host,150,52,14,8,24);const vals=e.q.map(x=>x==null?null:x);const max=nice(Math.max(...vals.map(v=>v||0),...e.caps)*1.05);yAxis(f,max,4,fq);const bw=f.iw/3;
+   ['M-3','M-2','M-1'].forEach((lab,j)=>{const x=f.ml+j*bw;const v=vals[j];const cy=f.mt+f.ih-e.caps[j]/max*f.ih;
+    if(v!=null){const hh=v/max*f.ih;el('rect',{x:x+bw*0.25,y:f.mt+f.ih-hh,width:bw*0.5,height:hh,rx:2,fill:css(v>e.caps[j]*1.5?'--crit':'--s1')},f.svg)}
+    el('line',{x1:x+bw*0.15,x2:x+bw*0.85,y1:cy,y2:cy,stroke:css('--crit'),'stroke-width':2},f.svg);
+    const t=el('text',{x:x+bw/2,y:f.h-8,'text-anchor':'middle','font-size':11,fill:css('--ink-3')},f.svg);t.textContent=`${lab} (${e.pre[j]})`;
+    const r=el('rect',{x,y:f.mt,width:bw,height:f.ih,fill:'transparent'},f.svg);hit(r,`${e.pre[j]} ${lab}\n출고 ${v==null?'미도래':nf(v)+'부'}\n상한 ${nf(e.caps[j])}부${v!=null?` · ${(v/e.caps[j]).toFixed(2)}배`:''}`)})})}
+ let h='<tr><th>시리즈</th><th>개정월</th><th>M-3</th><th>M-2</th><th>M-1</th><th>3개월 합</th><th>평상시 배수</th><th>M+1~M+3 반품</th><th>구간 반품률</th><th>개정판교체</th><th>폐기원가</th></tr>';
+ R.events.forEach(e=>h+=`<tr><td>${esc(e.s)}</td><td>${e.M}</td>${e.q.map(x=>`<td>${nf(x)}</td>`).join('')}<td>${nf(e.win)}</td><td>${e.mult.toFixed(2)}</td><td>${nf(e.postRet)}${e.postObs<3?` (${e.postObs}개월)`:''}</td><td>${pct(e.postRet/e.win)}</td><td>${nf(e.repl)}</td><td>${eok(e.repl*e.cost,2)}</td></tr>`);
+ if(R.n)h+=`<tr class="sum"><td>합계(관측 완료 ${R.n}종)</td><td></td><td></td><td></td><td></td><td>${nf(R.win)}</td><td>${R.mult.toFixed(2)}</td><td>${nf(R.post)}</td><td>${pct(R.rate)}</td><td>${nf(R.repl)}</td><td></td></tr>`;
+ $('#tb-ev').innerHTML=h;}
+
+// ---------- 데이터 등록
+function parseCSV(text){text=text.replace(/^﻿/,'');const rows=[];let row=[],cell='',q=false;
+ for(let i=0;i<text.length;i++){const c=text[i];if(q){if(c==='"'){if(text[i+1]==='"'){cell+='"';i++}else q=false}else cell+=c}else if(c==='"')q=true;else if(c===','){row.push(cell);cell=''}else if(c==='\n'){row.push(cell);rows.push(row);row=[];cell=''}else if(c!=='\r')cell+=c}
+ if(cell!==''||row.length){row.push(cell);rows.push(row)}return rows.filter(r=>r.some(x=>x.trim()!==''))}
+const SPEC={ship:['월','거래처명','시리즈명','출고부수_부','공급단가_원부'],ret:['월','거래처명','시리즈명','반품부수_부','반품사유'],mas:['시리즈명','과목','학년','정가_원','제작원가_원부','개정판출간월']};
+async function readF(id){const f=$(id).files[0];return f?{name:f.name,text:await f.text()}:null}
+function table(kind,file,errs){if(!file)return null;const rows=parseCSV(file.text);if(!rows.length){errs.push(`${file.name}: 빈 파일`);return null}
+ const head=rows[0].map(h=>h.trim());const idx=SPEC[kind].map(c=>head.indexOf(c));const miss=SPEC[kind].filter((c,i)=>idx[i]<0);
+ if(miss.length){errs.push(`${file.name}: 필수 열 없음 — ${miss.join(', ')}`);return null}
+ return rows.slice(1).map((r,li)=>({li:li+2,v:idx.map(i=>(r[i]??'').trim())}))}
+$('#bCheck').addEventListener('click',async()=>{const out=$('#vRes');const errs=[],warn=[];
+ const [fs,fr,fm]=await Promise.all([readF('#fShip'),readF('#fRet'),readF('#fMas')]);
+ if(!fs&&!fr&&!fm){out.innerHTML='<div class="msg err">파일을 하나 이상 선택하세요</div>';return}
+ const S=table('ship',fs,errs),R=table('ret',fr,errs),Mx=table('mas',fm,errs);
+ const ym=/^\d{4}-(0[1-9]|1[0-2])$/;const months={};const bad=[];
+ (S||[]).forEach(r=>{const [m,p,s,q,pr]=r.v;if(!ym.test(m)||!p||!s||!(+q>0)||!(+pr>0)){bad.push(`출고 ${r.li}행`);return}(months[m]||(months[m]={ship:[],ret:[]})).ship.push([p,s,+q,+pr])});
+ (R||[]).forEach(r=>{const [m,p,s,q,w]=r.v;if(!ym.test(m)||!p||!s||!(+q>0)||!w){bad.push(`반품 ${r.li}행`);return}(months[m]||(months[m]={ship:[],ret:[]})).ret.push([p,s,+q,w])});
+ let master=null;if(Mx){master=[];Mx.forEach(r=>{const [s,su,g,l,c,rv]=r.v;if(!s||!(+l>0)||!(+c>=0)||(rv&&!ym.test(rv))){bad.push(`마스터 ${r.li}행`);return}master.push([s,su,g,+l,+c,rv])})}
+ if(bad.length)errs.push(`형식 오류 ${bad.length}행: ${bad.slice(0,6).join(', ')}${bad.length>6?' 외':''} (월 YYYY-MM, 부수·단가는 양수)`);
+ const mset=new Set((master||ST.master||[]).map(r=>r[0]));const unk=new Set();Object.values(months).forEach(o=>{o.ship.concat(o.ret).forEach(r=>{if(!mset.has(r[1]))unk.add(r[1])})});
+ if(unk.size)warn.push(`도서마스터에 없는 시리즈 ${unk.size}종: ${[...unk].slice(0,5).join(', ')}${unk.size>5?' 외':''} — 제작원가·정가 계산에서 0 처리`);
+ const shipPairs=new Set();Object.values(ST.months).forEach(d=>(d.ship||[]).forEach(r=>shipPairs.add(r[0]+'|'+r[1])));Object.values(months).forEach(o=>o.ship.forEach(r=>shipPairs.add(r[0]+'|'+r[1])));
+ let orphan=0;Object.values(months).forEach(o=>o.ret.forEach(r=>{if(!shipPairs.has(r[0]+'|'+r[1]))orphan+=r[2]}));if(orphan)warn.push(`출고 이력 없는 (거래처, 시리즈) 반품 ${nf(orphan)}부 — 거래처 평균 단가로 환산`);
+ const keys=Object.keys(months).sort();const rep=keys.filter(k=>ST.months[k]);
+ ST.staged=errs.length?null:{months,master,files:[fs&&fs.name,fr&&fr.name,fm&&fm.name].filter(Boolean),sides:{ship:!!S,ret:!!R}};
+ out.innerHTML=(errs.length?`<div class="msg err">${errs.map(esc).join('<br>')}</div>`:'')+(warn.length?`<div class="msg info" style="margin-top:6px">${warn.map(esc).join('<br>')}</div>`:'')+
+  (keys.length?`<div style="margin-top:8px"><div class="note">대상 월(파랑 신규 · 노랑 교체)</div><div class="chips-m">${keys.map(k=>`<span class="${ST.months[k]?'rep':'new'}">${k} 출고 ${months[k].ship.length}·반품 ${months[k].ret.length}행</span>`).join('')}</div></div>`:'')+
+  (master?`<p class="note">도서마스터 ${master.length}종 교체</p>`:'')+(ST.staged?`<div class="msg ok" style="margin-top:6px">검증 통과${rep.length?` — ${rep.length}개월은 기존 데이터를 교체합니다`:''}. 등록을 누르면 저장됩니다.</div>`:'');
+ $('#bSave').disabled=!ST.staged||ST.canWrite===false;});
+$('#bSave').addEventListener('click',async()=>{const st=ST.staged;if(!st||!ST.db)return;const b=$('#bSave');b.disabled=true;const out=$('#vRes');
+ try{const uid=ST.user?await ST.user.id():null;const keys=Object.keys(st.months).sort();
+  for(const k of keys){const prev=ST.months[k]||{ship:[],ret:[]};const nx=st.months[k];
+   await ST.db.doc('months/'+k).set({ym:k,ship:st.sides.ship?nx.ship:(prev.ship||[]),ret:st.sides.ret?nx.ret:(prev.ret||[]),at:new Date().toISOString(),by:uid||'',source:st.files.join(', ')})}
+  if(st.master)await ST.db.doc('meta/master').set({rows:st.master,at:new Date().toISOString(),by:uid||''});
+  await ST.db.collection('uploads').add({at:new Date().toISOString(),by:uid||'',months:keys,files:st.files,master:!!st.master,shipRows:keys.reduce((a,k)=>a+st.months[k].ship.length,0),retRows:keys.reduce((a,k)=>a+st.months[k].ret.length,0)});
+  out.innerHTML=`<div class="msg ok">${keys.length}개월${st.master?' + 도서마스터':''} 등록 완료</div>`;ST.staged=null;['#fShip','#fRet','#fMas'].forEach(i=>$(i).value='');
+ }catch(e){out.innerHTML=`<div class="msg err">${e&&e.code==='invalid_argument'?'등록 권한이 없습니다(편집 권한 필요).':e&&e.code==='quota_exceeded'?'저장 공간 한도에 도달했습니다. 오래된 월을 정리한 뒤 다시 시도하세요.':'저장하지 못했습니다. 잠시 후 다시 시도하세요.'}</div>`;if(e&&e.code==='invalid_argument'){ST.canWrite=false;renderData()}b.disabled=false}});
+$('#bParam').addEventListener('click',async()=>{const v=+$('#pLog').value;if(!(v>0)||!ST.db)return;try{await ST.db.doc('meta/params').set({logistics:v,at:new Date().toISOString()})}catch(e){ST.canWrite=false;renderData()}});
+function renderData(){const ms=Object.keys(ST.months).sort();
+ $('#regMonths').innerHTML=ms.length?ms.map(m=>`<span title="출고 ${(ST.months[m].ship||[]).length}행 · 반품 ${(ST.months[m].ret||[]).length}행">${m}</span>`).join(''):'<span class="note" style="background:none">없음</span>';
+ $('#regNote').textContent=ms.length?`${ms.length}개월 등록 · 도서마스터 ${ST.master?ST.master.length+'종':'미등록'}`:'';
+ $('#pLog').value=ST.params.logistics||1400;
+ const ro=ST.canWrite===false||!ST.db;['#fShip','#fRet','#fMas','#bCheck','#pLog','#bParam'].forEach(i=>$(i).disabled=ro);if(ro)$('#bSave').disabled=true;
+ const rn=$('#roNote');if(!ro&&rn)rn.remove();
+ if(ro&&!$('#roNote')){const n=document.createElement('div');n.id='roNote';n.className='msg info';n.textContent=ST.db?'보기 권한입니다 — 데이터 등록은 편집 권한이 있는 담당자만 할 수 있습니다.':'저장소에 연결되지 않아 등록할 수 없습니다.';$('#upForm').prepend(n)}
+ $('#tb-up').innerHTML='<tr><th>등록 시각</th><th>월</th><th>출고·반품 행</th></tr>'+(ST.uploads.length?ST.uploads.map(u=>`<tr><td>${esc((u.at||'').slice(0,16).replace('T',' '))}</td><td>${esc((u.months||[]).length>2?u.months[0]+'~'+u.months[u.months.length-1]:(u.months||[]).join(', '))}</td><td>${nf(u.shipRows||0)} · ${nf(u.retRows||0)}</td></tr>`).join(''):'<tr><td colspan="3" class="l">이력 없음</td></tr>');}
+
+// ---------- 저장소 연결
+(async()=>{
+ const db=await window.claude?.use?.('db');
+ if(!db){ST.db=false;$('#st').textContent='저장소 연결 안 됨';showEmpty();renderData();return}
+ ST.db=db;
+ const user=await window.claude.use('user');ST.user=user;
+ if(user){try{const c=await user.can('data.write');if(c===false)ST.canWrite=false;else if(c===true)ST.canWrite=true}catch(e){}}
+ db.collection('months').onSnapshot(s=>{const o={};s.docs.forEach(d=>{if(d.exists)o[d.id]=d.data()});ST.months=o;schedule()},()=>{$('#st').textContent='데이터 구독 오류 — 새로고침하세요'});
+ db.doc('meta/master').onSnapshot(d=>{ST.master=d.exists?d.data().rows:null;schedule()},()=>{});
+ db.doc('meta/params').onSnapshot(d=>{if(d.exists)ST.params=d.data();schedule()},()=>{});
+ db.collection('uploads').orderBy('at','desc').limit(8).onSnapshot(s=>{ST.uploads=s.docs.map(d=>d.data());if(ST.tab==='data')renderData()},()=>{});
+})();
+let rs;addEventListener('resize',()=>{clearTimeout(rs);rs=setTimeout(()=>{if(ST.model)render()},150)});
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>ST.model&&render());
+new MutationObserver(()=>ST.model&&render()).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+renderData();
+</script>

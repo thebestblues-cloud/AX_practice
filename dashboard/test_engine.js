@@ -1,0 +1,14 @@
+const E=require('./engine.js');const seed=require('./seed.json');
+const t0=Date.now();const m=E.build(Object.values(seed.months),seed.master,{logistics:1400});
+console.log('ms',Date.now()-t0);
+const T=m.T;console.log(JSON.stringify({ship:T.ship,ret:T.ret,rev:T.rev,retamt:Math.round(T.retamt),rate:T.rate,contrib:Math.round(T.contrib),d:T.d,fallback:T.fallbackQ}));
+const h=m.PM['한솔북센'];console.log('hansol',h.rate,h.exRate,h.excess,h.netrev,h.contrib,h.be,h.contribPer,h.rk_rev,h.rk_netrev,h.cl,JSON.stringify(h.alerts));
+console.log('rev',m.REV.n,m.REV.win,m.REV.post,m.REV.repl,m.REV.rate,m.REV.replRate,m.REV.mult,m.REV.offShare);
+console.log('lag',m.lag.p.map(x=>x.toFixed(4)).join(' '),m.lag.total,m.lag.wape,'bt',m.bt&&m.bt.wape);
+console.log('fc',JSON.stringify(m.fc.map(f=>({m:f.m,n:Math.round(f.normal),r:Math.round(f.rev),items:f.revItems.map(i=>i.s)}))));
+console.log('clusters',JSON.stringify(m.clusters.map(c=>({j:c.j,tag:c.tag,mem:c.members}))));
+console.log('upcoming',m.REV.upcoming.map(e=>e.s+' '+e.M+' '+e.q.join('/')+' base '+Math.round(e.base)).join(' | '));
+console.log('serAlerts',JSON.stringify(m.serAlerts));
+console.log('alerts',m.P.filter(p=>p.sev).map(p=>p.n+':'+p.alerts.map(a=>a.k+a.lv).join(',')).join(' | '));
+console.log('contrib',m.P.map(p=>p.n+' '+Math.round(p.contrib/1e6)+'M cm'+(p.cm*100).toFixed(1)+' be'+(p.be*100).toFixed(1)).join(' | '));
+const m2=E.build(Object.values(seed.months),seed.master,{logistics:1400},'2025-06');console.log('asOf 2025-06',m2.T.ship,m2.T.rate,m2.REV.upcoming.map(e=>e.s+' '+e.M).join(','));
